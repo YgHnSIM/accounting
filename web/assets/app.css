@@ -901,11 +901,12 @@
   }
 
   .chart-head {
+    container-type: inline-size;
     display: flex;
     justify-content: space-between;
     align-items: baseline;
     flex-wrap: wrap;
-    gap: 0.5rem;
+    gap: 0.28rem 0.65rem;
     border-block-end: var(--rule-hair) solid var(--color-rule);
     padding-block-end: 0.55rem;
     margin-block-end: 0.75rem;
@@ -913,11 +914,21 @@
 
   .chart-head h3 {
     font-size: 0.96rem;
+    line-height: 1.35;
+    word-break: keep-all;
   }
 
   .chart-hint {
     font-size: 0.76rem;
     color: var(--color-muted);
+    word-break: keep-all;
+  }
+
+  @container (inline-size < 460px) {
+    .chart-head {
+      flex-direction: column;
+      align-items: flex-start;
+    }
   }
 
   .chart-canvas-wrap {
@@ -928,13 +939,15 @@
 
   /* Docked External Readout Strip (replaces occluding floating canvas tooltips) */
   .chart-readout {
+    container-type: inline-size;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 0.4rem 0.75rem;
-    min-block-size: 2.15rem;
-    padding-block: 0.35rem;
-    padding-inline: 0.6rem;
+    justify-content: space-between;
+    gap: 0.35rem 0.85rem;
+    min-block-size: 2.25rem;
+    padding-block: 0.42rem;
+    padding-inline: 0.7rem;
     margin-block-end: 0.65rem;
     background-color: var(--color-well);
     border: var(--rule-hair) solid var(--color-rule);
@@ -947,19 +960,80 @@
   .readout-key {
     font-weight: 700;
     color: var(--color-ink);
+    word-break: keep-all;
+  }
+
+  .readout-items {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.35rem 0.85rem;
   }
 
   .readout-item {
     display: inline-flex;
-    align-items: center;
+    align-items: baseline;
     gap: 0.32rem;
     padding-inline-start: 0.45rem;
     border-inline-start: 3px solid var(--swatch-color, var(--color-accent));
+    min-inline-size: 0;
   }
 
+  .readout-label {
+    font-size: 0.76rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .readout-val,
   .readout-item b {
     color: var(--color-ink);
     font-weight: 700;
+    white-space: nowrap;
+  }
+
+  @container (inline-size < 500px) {
+    .chart-readout {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.38rem;
+      padding-block: 0.5rem;
+      padding-inline: 0.6rem;
+    }
+
+    .readout-key {
+      font-size: 0.82rem;
+      padding-block-end: 0.32rem;
+      border-block-end: var(--rule-hair) solid var(--color-rule);
+    }
+
+    .readout-items {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(min(82px, 100%), 1fr));
+      gap: 0.35rem 0.4rem;
+      inline-size: 100%;
+    }
+
+    .readout-items[data-count="1"] {
+      display: flex;
+    }
+
+    .readout-items:not([data-count="1"]) .readout-item {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.08rem;
+      padding-inline-start: 0.38rem;
+    }
+
+    .readout-items:not([data-count="1"]) .readout-label {
+      font-size: 0.7rem;
+      line-height: 1.2;
+    }
+
+    .readout-items:not([data-count="1"]) .readout-val {
+      font-size: clamp(0.74rem, 3.2cqi, 0.84rem);
+      line-height: 1.25;
+    }
   }
 
   /* Pattern A: Intra-Chart Horizontal Panning for Wide Time-Series */
@@ -1213,12 +1287,14 @@
   }
 
   .drill-ledger-link {
+    margin-inline-start: auto;
     font-size: 0.78rem;
     font-weight: 600;
     color: var(--color-accent);
     text-decoration: none;
     border-block-end: var(--rule-hair) solid var(--color-accent);
     padding-block-end: 0.08rem;
+    white-space: nowrap;
   }
 
   .row-link {

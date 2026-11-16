@@ -269,8 +269,8 @@ def build_index_page(meta):
       <div id="chart-deck-track" class="chart-deck-track" tabindex="0" role="group" aria-label="분석 차트 슬라이드">
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 1번째: 활동별 지출 탐색">
           <div class="chart-head">
-            <h3>활동별 지출 탐색 (대분류 → 중분류 → 세부활동)</h3>
-            <span id="drill-hint" class="chart-hint" aria-live="polite">막대를 누르면 하위 분류를 탐색합니다</span>
+            <h3>활동별 지출 탐색</h3>
+            <span id="drill-hint" class="chart-hint" aria-live="polite">1단계 대분류 · 막대 선택 시 하위 탐색</span>
           </div>
           <div class="drill-bar-wrap">
             <div id="drill-breadcrumbs" class="breadcrumb-bar"></div>

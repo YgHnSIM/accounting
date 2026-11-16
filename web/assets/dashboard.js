@@ -87,9 +87,9 @@
       return;
     }
     const itemsHtml = items
-      .map((it) => `<span class="readout-item" style="--swatch-color: ${escapeHtml(it.color)}"><span>${escapeHtml(it.label)}</span><b>${escapeHtml(it.value)}</b></span>`)
+      .map((it) => `<span class="readout-item" style="--swatch-color: ${escapeHtml(it.color)}"><span class="readout-label">${escapeHtml(it.label)}</span><b class="readout-val">${escapeHtml(it.value)}</b></span>`)
       .join("");
-    el.innerHTML = `<span class="readout-key">${escapeHtml(keyText)}</span>${itemsHtml}`;
+    el.innerHTML = `<span class="readout-key">${escapeHtml(keyText)}</span><span class="readout-items" data-count="${items.length}">${itemsHtml}</span>`;
   }
 
   function makeExternalTooltip(elId, defaultFn, activeFn) {
@@ -394,7 +394,11 @@
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
     const totalVal = items.reduce((a, b) => a + b[1], 0) || 1;
     const hint = document.getElementById("drill-hint");
-    hint.textContent = field === "gwan" ? "막대를 누르면 중분류로 내려갑니다" : field === "hang" ? "막대를 누르면 세부활동으로 내려갑니다" : "막대를 누르면 해당 거래 내역으로 이동합니다";
+    hint.textContent = field === "gwan"
+      ? "1단계 대분류 · 막대 선택 시 중분류 이동"
+      : field === "hang"
+        ? "2단계 중분류 · 막대 선택 시 세부활동 이동"
+        : "3단계 세부활동 · 막대 선택 시 거래내역 이동";
 
     const showDrillDefault = () => {
       if (!items.length) return renderReadout("readout-drill", "", []);
