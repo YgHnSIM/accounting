@@ -1,0 +1,13 @@
+# Raw bank/PDF statements & unmasked local snapshots (never commit to public GitHub)
+_raw/
+data/snapshots/
+data/latest/
+reports/
+_site/
+config/privacy.json
+
+# Python / OS noise
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
