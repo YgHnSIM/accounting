@@ -76,6 +76,33 @@
     };
   }
 
+  function renderReadout(elId, keyText, items) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (!keyText) {
+      el.innerHTML = `<span class="readout-key">표시할 데이터가 없습니다</span>`;
+      return;
+    }
+    const itemsHtml = items
+      .map((it) => `<span class="readout-item" style="--swatch-color: ${escapeHtml(it.color)}"><span>${escapeHtml(it.label)}</span><b>${escapeHtml(it.value)}</b></span>`)
+      .join("");
+    el.innerHTML = `<span class="readout-key">${escapeHtml(keyText)}</span>${itemsHtml}`;
+  }
+
+  function makeExternalTooltip(elId, defaultFn, activeFn) {
+    return {
+      enabled: false,
+      external(context) {
+        const { tooltip } = context;
+        if (!tooltip || tooltip.opacity === 0 || !tooltip.dataPoints || !tooltip.dataPoints.length) {
+          defaultFn();
+          return;
+        }
+        activeFn(tooltip);
+      },
+    };
+  }
+
   function baseScaleOpts(t) {
     return {
       grid: { color: t.grid },
@@ -87,7 +114,6 @@
   function basePluginOpts(t) {
     return {
       legend: { labels: { color: t.tick, font: { family: t.font, size: 11 }, boxWidth: 12 } },
-      tooltip: { backgroundColor: t.tooltipBg, titleColor: t.tooltipInk, bodyColor: t.tooltipInk, padding: 10, cornerRadius: 4 },
     };
   }
 
@@ -142,13 +168,24 @@
     const scroller = document.getElementById("monthly-scroll");
     const stage = document.getElementById("monthly-stage");
     const panHint = document.getElementById("monthly-pan-hint");
-    const isWideSeries = yms.length > 14;
+    const isWideSeries = yms.length > 6;
     if (stage) {
-      stage.style.setProperty("--stage-min-width", isWideSeries ? `${Math.max(540, yms.length * 26)}px` : "100%");
+      stage.style.setProperty("--stage-min-width", isWideSeries ? `${Math.max(480, yms.length * 40)}px` : "100%");
     }
     if (panHint) {
-      panHint.textContent = isWideSeries ? "← 좌우로 밀어 이전 월 탐색 (최신월 기준)" : "수입·지출 막대 및 잔액 꺾은선";
+      panHint.textContent = isWideSeries ? "← 좌우로 밀어 월별 추이 탐색" : "수입·지출 막대 및 잔액 꺾은선";
     }
+
+    const showMonthlyDefault = () => {
+      if (!yms.length) return renderReadout("readout-monthly", "", []);
+      const last = yms.length - 1;
+      renderReadout("readout-monthly", `${yms[last]} (최신)`, [
+        { label: "수입", value: `${fmt(incs[last])}원`, color: t.income },
+        { label: "지출", value: `${fmt(exps[last])}원`, color: t.expense },
+        { label: "잔액", value: `${fmt(bals[last])}원`, color: t.cobalt },
+      ]);
+    };
+    showMonthlyDefault();
 
     const ctx = document.getElementById("chart-monthly");
     charts.monthly = new Chart(ctx, {
@@ -157,7 +194,7 @@
         datasets: [
           { type: "bar", label: "조합 수입", data: incs, backgroundColor: t.income, borderRadius: 2, yAxisID: "y" },
           { type: "bar", label: "사업 지출", data: exps, backgroundColor: t.expense, borderRadius: 2, yAxisID: "y" },
-          { type: "line", label: "기말 잔액", data: bals, borderColor: t.cobalt, backgroundColor: t.cobalt, tension: 0.18, pointRadius: 2.5, borderWidth: 2, yAxisID: "y1" },
+          { type: "line", label: "기말 잔액", data: bals, borderColor: t.cobalt, backgroundColor: t.cobalt, tension: 0.18, pointRadius: 2.5, pointHoverRadius: 5, borderWidth: 2, yAxisID: "y1" },
         ],
       },
       options: {
@@ -165,13 +202,33 @@
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         scales: {
-          x: { ...baseScaleOpts(t), grid: { display: false } },
-          y: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
-          y1: { ...baseScaleOpts(t), position: "right", grid: { drawOnChartArea: false }, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          x: {
+            ...baseScaleOpts(t),
+            grid: { display: false },
+            ticks: { ...baseScaleOpts(t).ticks, maxRotation: 0, autoSkipPadding: 14, font: { family: t.font, size: 10 } },
+          },
+          y: {
+            ...baseScaleOpts(t),
+            beginAtZero: true,
+            ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" },
+          },
+          y1: {
+            ...baseScaleOpts(t),
+            position: "right",
+            grid: { drawOnChartArea: false },
+            ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" },
+          },
         },
         plugins: {
           ...basePluginOpts(t),
-          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } },
+          tooltip: makeExternalTooltip("readout-monthly", showMonthlyDefault, (tip) => {
+            const idx = tip.dataPoints[0].dataIndex;
+            renderReadout("readout-monthly", yms[idx], [
+              { label: "수입", value: `${fmt(incs[idx])}원`, color: t.income },
+              { label: "지출", value: `${fmt(exps[idx])}원`, color: t.expense },
+              { label: "잔액", value: `${fmt(bals[idx])}원`, color: t.cobalt },
+            ]);
+          }),
         },
       },
     });
@@ -239,8 +296,18 @@
       agg.set(r[field], (agg.get(r[field]) || 0) + r.exp);
     }
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
+    const totalVal = items.reduce((a, b) => a + b[1], 0) || 1;
     const hint = document.getElementById("drill-hint");
     hint.textContent = field === "gwan" ? "막대를 누르면 중분류로 내려갑니다" : field === "hang" ? "막대를 누르면 세부활동으로 내려갑니다" : "막대를 누르면 해당 거래 내역으로 이동합니다";
+
+    const showDrillDefault = () => {
+      if (!items.length) return renderReadout("readout-drill", "", []);
+      const [lbl, val] = items[0];
+      renderReadout("readout-drill", `${lbl} (1위)`, [
+        { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[0] },
+      ]);
+    };
+    showDrillDefault();
 
     const ctx = document.getElementById("chart-drill");
     charts.drill = new Chart(ctx, {
@@ -253,6 +320,7 @@
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", axis: "y", intersect: false },
         onClick: (_, elements) => {
           if (!elements.length) return;
           const label = items[elements[0].index][0];
@@ -272,13 +340,19 @@
           }
         },
         scales: {
-          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" } },
           y: { ...baseScaleOpts(t), grid: { display: false } },
         },
         plugins: {
           ...basePluginOpts(t),
           legend: { display: false },
-          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } },
+          tooltip: makeExternalTooltip("readout-drill", showDrillDefault, (tip) => {
+            const idx = tip.dataPoints[0].dataIndex;
+            const [lbl, val] = items[idx];
+            renderReadout("readout-drill", lbl, [
+              { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
+            ]);
+          }),
         },
       },
     });
@@ -291,6 +365,14 @@
       if (r.gubun === "지출") agg.set(r.mok, (agg.get(r.mok) || 0) + r.exp);
     }
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const showTopDefault = () => {
+      if (!items.length) return renderReadout("readout-top-mok", "", []);
+      renderReadout("readout-top-mok", `${items[0][0]} (1위)`, [
+        { label: "지출액", value: `${fmt(items[0][1])}원`, color: t.blue },
+      ]);
+    };
+    showTopDefault();
+
     charts.topMok = new Chart(document.getElementById("chart-top-mok"), {
       type: "bar",
       data: {
@@ -301,14 +383,21 @@
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", axis: "y", intersect: false },
         scales: {
-          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" } },
           y: { ...baseScaleOpts(t), grid: { display: false } },
         },
         plugins: {
           ...basePluginOpts(t),
           legend: { display: false },
-          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } },
+          tooltip: makeExternalTooltip("readout-top-mok", showTopDefault, (tip) => {
+            const idx = tip.dataPoints[0].dataIndex;
+            const [lbl, val] = items[idx];
+            renderReadout("readout-top-mok", `${idx + 1}위 · ${lbl}`, [
+              { label: "지출액", value: `${fmt(val)}원`, color: t.blue },
+            ]);
+          }),
         },
       },
     });
@@ -321,6 +410,15 @@
       if (r.gubun === "지출" && r.exp_type) agg.set(r.exp_type, (agg.get(r.exp_type) || 0) + r.exp);
     }
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
+    const totalVal = items.reduce((a, b) => a + b[1], 0) || 1;
+    const showExpDefault = () => {
+      if (!items.length) return renderReadout("readout-exp-type", "", []);
+      renderReadout("readout-exp-type", `${items[0][0]} (최다)`, [
+        { label: "지출액", value: `${fmt(items[0][1])}원 (${(items[0][1] / totalVal * 100).toFixed(1)}%)`, color: t.palette[0] },
+      ]);
+    };
+    showExpDefault();
+
     charts.expType = new Chart(document.getElementById("chart-exp-type"), {
       type: "doughnut",
       data: {
@@ -337,7 +435,13 @@
         maintainAspectRatio: false,
         plugins: {
           legend: { position: "right", labels: { color: t.tick, boxWidth: 12, font: { family: t.font, size: 11 } } },
-          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}원` } },
+          tooltip: makeExternalTooltip("readout-exp-type", showExpDefault, (tip) => {
+            const idx = tip.dataPoints[0].dataIndex;
+            const [lbl, val] = items[idx];
+            renderReadout("readout-exp-type", lbl, [
+              { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
+            ]);
+          }),
         },
       },
     });
@@ -354,6 +458,16 @@
       dues.push(sub.filter((r) => r.gwan === "조합비수입").reduce((a, b) => a + b.inc, 0));
       grants.push(sub.filter((r) => r.mok === "지부 교부금").reduce((a, b) => a + b.exp, 0));
     }
+    const showDgDefault = () => {
+      if (!keys.length) return renderReadout("readout-dues-grant", "", []);
+      const last = keys.length - 1;
+      renderReadout("readout-dues-grant", `${keys[last]} (최신)`, [
+        { label: "조합비", value: `${fmt(dues[last])}원`, color: t.cobalt },
+        { label: "교부금", value: `${fmt(grants[last])}원`, color: t.grant },
+      ]);
+    };
+    showDgDefault();
+
     charts.duesGrant = new Chart(document.getElementById("chart-dues-grant"), {
       type: "bar",
       data: {
@@ -366,13 +480,20 @@
       options: {
         responsive: true,
         maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
         scales: {
-          x: { ...baseScaleOpts(t), grid: { display: false } },
-          y: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          x: { ...baseScaleOpts(t), grid: { display: false }, ticks: { ...baseScaleOpts(t).ticks, maxRotation: 0 } },
+          y: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" } },
         },
         plugins: {
           ...basePluginOpts(t),
-          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } },
+          tooltip: makeExternalTooltip("readout-dues-grant", showDgDefault, (tip) => {
+            const idx = tip.dataPoints[0].dataIndex;
+            renderReadout("readout-dues-grant", keys[idx], [
+              { label: "조합비", value: `${fmt(dues[idx])}원`, color: t.cobalt },
+              { label: "교부금", value: `${fmt(grants[idx])}원`, color: t.grant },
+            ]);
+          }),
         },
       },
     });

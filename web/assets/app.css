@@ -286,7 +286,8 @@
     color: var(--color-ink);
     font-weight: 700;
     letter-spacing: -0.02em;
-    line-height: 1.18;
+    line-height: 1.2;
+    word-break: keep-all;
     text-wrap: balance;
     overflow-wrap: break-word;
     min-inline-size: 0;
@@ -852,6 +853,42 @@
     inline-size: 100%;
   }
 
+  /* Docked External Readout Strip (replaces occluding floating canvas tooltips) */
+  .chart-readout {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.75rem;
+    min-block-size: 2.15rem;
+    padding-block: 0.35rem;
+    padding-inline: 0.6rem;
+    margin-block-end: 0.65rem;
+    background-color: var(--color-well);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-control);
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums lining-nums;
+    color: var(--color-ink-2);
+  }
+
+  .readout-key {
+    font-weight: 700;
+    color: var(--color-ink);
+  }
+
+  .readout-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    padding-inline-start: 0.45rem;
+    border-inline-start: 3px solid var(--swatch-color, var(--color-accent));
+  }
+
+  .readout-item b {
+    color: var(--color-ink);
+    font-weight: 700;
+  }
+
   /* Pattern A: Intra-Chart Horizontal Panning for Wide Time-Series */
   .chart-scroll-x {
     overflow-x: auto;
@@ -921,11 +958,27 @@
     display: none;
     overflow-x: auto;
     gap: 0.35rem;
-    padding-block-end: 0.55rem;
+    padding-block-end: 0.45rem;
     margin-block-end: 0.65rem;
     border-block-end: var(--rule-hair) solid var(--color-rule);
     scroll-snap-type: inline proximity;
     touch-action: manipulation;
+    scrollbar-width: none;
+    --fade-size: 1.5rem;
+    --fade-dir: right;
+    --fade-start-pos: 0;
+    --fade-end-pos: 100%;
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to var(--fade-dir), black, transparent) var(--fade-start-pos) 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to var(--fade-dir), transparent, black) var(--fade-end-pos) 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: reveal-fade-start linear both, hide-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+
+  .chart-deck-tabs::-webkit-scrollbar {
+    display: none;
   }
 
   .chart-deck-tab {
