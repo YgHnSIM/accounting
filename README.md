@@ -1,6 +1,6 @@
 # 우체국물류지원단 물류노동조합 회계 프로젝트
 
-Google Sheets 통합 원장([노동조합 회계원장 (2023~2026 통합)](https://docs.google.com/spreadsheets/d/1uD8E7Sew4e3Xs50DsExENEbK9gAewtbJwRDY5Z-co3U/edit))과 로컬 보관·분석·보고 체계를 연결하는 프로젝트 폴더입니다.
+Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8E7Sew4e3Xs50DsExENEbK9gAewtbJwRDY5Z-co3U/edit))과 로컬 보관·분석·보고 체계를 연결하는 프로젝트 폴더입니다.
 
 ## 폴더 구조
 
