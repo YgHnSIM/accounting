@@ -91,11 +91,6 @@
     --sig-grant-dark: #ecc05e;
     --sig-grant-soft-dark: #302815;
 
-    --sig-plum-light: #5e3a82;
-    --sig-plum-soft-light: #efe9f6;
-    --sig-plum-dark: #c29df0;
-    --sig-plum-soft-dark: #271f36;
-
     --sig-adj-bg-light: #f5efe4;
     --sig-adj-bg-dark: #25221a;
     --sig-subtot-bg-light: #eaedf2;
@@ -134,8 +129,6 @@
     --color-expense-soft: var(--sig-expense-soft-light);
     --color-grant: var(--sig-grant-light);
     --color-grant-soft: var(--sig-grant-soft-light);
-    --color-plum: var(--sig-plum-light);
-    --color-plum-soft: var(--sig-plum-soft-light);
     --year-color: var(--color-accent);
     --year-soft: var(--color-accent-soft);
 
@@ -207,8 +200,6 @@
       --color-expense-soft: var(--sig-expense-soft-dark);
       --color-grant: var(--sig-grant-dark);
       --color-grant-soft: var(--sig-grant-soft-dark);
-      --color-plum: var(--sig-plum-dark);
-      --color-plum-soft: var(--sig-plum-soft-dark);
 
       --color-adj-bg: var(--sig-adj-bg-dark);
       --color-subtot-bg: var(--sig-subtot-bg-dark);
@@ -262,8 +253,6 @@
       --color-expense-soft: light-dark(var(--sig-expense-soft-light), var(--sig-expense-soft-dark));
       --color-grant: light-dark(var(--sig-grant-light), var(--sig-grant-dark));
       --color-grant-soft: light-dark(var(--sig-grant-soft-light), var(--sig-grant-soft-dark));
-      --color-plum: light-dark(var(--sig-plum-light), var(--sig-plum-dark));
-      --color-plum-soft: light-dark(var(--sig-plum-soft-light), var(--sig-plum-soft-dark));
 
       --color-adj-bg: light-dark(var(--sig-adj-bg-light), var(--sig-adj-bg-dark));
       --color-subtot-bg: light-dark(var(--sig-subtot-bg-light), var(--sig-subtot-bg-dark));
@@ -1386,25 +1375,15 @@
     background-color: var(--color-adj-bg);
   }
 
-  /* Year Color Identity Bindings (Cobalt / Pine / Ochre / Plum) */
-  [data-year-tone="cobalt"] {
+  /* Alternating Year Identity (Single Accent Cobalt vs Calm Slate Neutral) */
+  [data-year-tone="accent"] {
     --year-color: var(--color-accent);
     --year-soft: var(--color-accent-soft);
   }
 
-  [data-year-tone="pine"] {
-    --year-color: var(--color-income);
-    --year-soft: var(--color-income-soft);
-  }
-
-  [data-year-tone="ochre"] {
-    --year-color: var(--color-grant);
-    --year-soft: var(--color-grant-soft);
-  }
-
-  [data-year-tone="plum"] {
-    --year-color: var(--color-plum);
-    --year-soft: var(--color-plum-soft);
+  [data-year-tone="neutral"] {
+    --year-color: var(--color-ink-2);
+    --year-soft: var(--color-well);
   }
 
   .page-masthead[data-year-tone] {
@@ -1582,18 +1561,12 @@
   .month-card-top {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
+    align-items: baseline;
     gap: 0.5rem;
   }
 
-  .month-num-wrap {
-    display: flex;
-    align-items: baseline;
-    gap: 0.4rem;
-  }
-
   .month-num {
-    font-size: 1.25rem;
+    font-size: 1.2rem;
     font-weight: 800;
     font-variant-numeric: tabular-nums;
     color: var(--year-color);
@@ -1604,77 +1577,22 @@
     font-size: 0.76rem;
     font-weight: 600;
     color: var(--color-muted);
-  }
-
-  .net-badge {
-    display: inline-flex;
-    align-items: center;
-    padding-block: 0.14rem;
-    padding-inline: 0.45rem;
-    border-radius: var(--radius-control);
-    font-size: 0.74rem;
-    font-weight: 700;
-    font-variant-numeric: tabular-nums;
-    border: var(--rule-hair) solid var(--color-rule);
-    background-color: var(--color-well);
-    color: var(--color-ink-2);
-  }
-
-  .net-badge[data-net="surplus"] {
-    background-color: var(--color-income-soft);
-    border-color: var(--color-income);
-    color: var(--color-income);
-  }
-
-  .net-badge[data-net="deficit"] {
-    background-color: var(--color-expense-soft);
-    border-color: var(--color-expense);
-    color: var(--color-expense);
-  }
-
-  .month-bars {
-    display: grid;
-    gap: 0.25rem;
-  }
-
-  .month-bar-row {
-    display: grid;
-    grid-template-columns: 2rem minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.76rem;
     font-variant-numeric: tabular-nums;
   }
 
-  .month-bar-label {
-    color: var(--color-muted);
-    font-weight: 600;
-  }
-
-  .month-bar-track {
-    block-size: 6px;
-    background-color: var(--color-well);
-    border-radius: var(--radius-sharp);
-    overflow: clip;
-  }
-
-  .month-bar-fill {
-    block-size: 100%;
-    inline-size: var(--bar-pct, 0%);
-    background-color: var(--bar-color, var(--color-accent));
-  }
-
-  .month-bar-fill.inc {
-    --bar-color: var(--color-income);
-  }
-
-  .month-bar-fill.exp {
-    --bar-color: var(--color-expense);
-  }
-
-  .month-bar-amt {
+  .month-metrics {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
     color: var(--color-ink-2);
-    font-weight: 600;
+  }
+
+  .month-metrics b {
+    color: var(--color-ink);
   }
 
   .month-highlight {
@@ -1905,7 +1823,6 @@
     .year-group-head,
     .month-grid,
     .month-card,
-    .net-badge,
     .site-menu {
       border-color: ButtonBorder;
     }

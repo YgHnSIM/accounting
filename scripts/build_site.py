@@ -28,11 +28,10 @@ plt.rcParams["xtick.color"] = "#4a505e"
 plt.rcParams["ytick.color"] = "#4a505e"
 plt.rcParams["text.color"] = "#16181d"
 PALETTE = ["#1b4079", "#2d63a8", "#1c6b4e", "#b3461d", "#9e6b08", "#177278", "#6b468c", "#5c6473"]
-YEAR_TONES = {2: "cobalt", 1: "pine", 0: "ochre", 3: "plum"}
 
 
 def year_tone(year: int) -> str:
-    return YEAR_TONES[int(year) % 4]
+    return "accent" if int(year) % 2 == 0 else "neutral"
 
 
 def fmt_won(v):
@@ -869,9 +868,6 @@ def build_reports_archive_page(years, months, records):
         yr_r = [r for r in records if r["year"] == y]
         ys = summarize_period(yr_r)
         yr_end = month_info[y_months[0]]["end_bal"] if y_months else 0
-        max_flow = max(
-            [max(month_info[ym]["sum"]["inc"], month_info[ym]["sum"]["exp"]) for ym in y_months] or [1]
-        ) or 1
 
         year_chips.append(
             f"<button type='button' class='year-chip' data-filter-year='{y}' data-year-tone='{ytone}' aria-pressed='false'>"
@@ -883,17 +879,6 @@ def build_reports_archive_page(years, months, records):
             info = month_info[ym]
             ms = info["sum"]
             m_num = ym.split("-")[1]
-            # Operating surplus/deficit including branch transfers (excluding initial carryover)
-            net_flow = ms["net"] - ms["adj"]
-            if net_flow > 0:
-                net_cls, net_txt = "surplus", f"+{fmt_man(net_flow)} 흑자"
-            elif net_flow < 0:
-                net_cls, net_txt = "deficit", f"{fmt_man(net_flow)} 적자"
-            else:
-                net_cls, net_txt = "even", "수지 보합"
-
-            inc_pct = round(ms["inc"] / max_flow * 100) if ms["inc"] else 0
-            exp_pct = round(ms["exp"] / max_flow * 100) if ms["exp"] else 0
 
             if info["top_mok"]:
                 m_name, m_amt = info["top_mok"]
@@ -906,12 +891,12 @@ def build_reports_archive_page(years, months, records):
             month_cards.append(
                 f"<article class='month-card'>"
                 f"<div class='month-card-top'>"
-                f"<div class='month-num-wrap'><span class='month-num'>{m_num}월</span><span class='month-tx-cnt'>{info['count']}건</span></div>"
-                f"<span class='net-badge' data-net='{net_cls}'>{net_txt}</span>"
+                f"<span class='month-num'>{m_num}월</span>"
+                f"<span class='month-tx-cnt'>{info['count']}건</span>"
                 f"</div>"
-                f"<div class='month-bars'>"
-                f"<div class='month-bar-row'><span class='month-bar-label'>수입</span><div class='month-bar-track'><div class='month-bar-fill inc' style='--bar-pct: {inc_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['inc'])}</span></div>"
-                f"<div class='month-bar-row'><span class='month-bar-label'>지출</span><div class='month-bar-track'><div class='month-bar-fill exp' style='--bar-pct: {exp_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['exp'])}</span></div>"
+                f"<div class='month-metrics'>"
+                f"<span>수입 <b>{fmt_man(ms['inc'])}</b></span>"
+                f"<span>지출 <b>{fmt_man(ms['exp'])}</b></span>"
                 f"</div>"
                 f"<div class='month-highlight'>{hi_html}</div>"
                 f"<div class='month-card-foot'>"
@@ -938,7 +923,7 @@ def build_reports_archive_page(years, months, records):
   <header class="page-masthead">
     <div>
       <h1>보고서 아카이브</h1>
-      <p class="lead">연도별 색상 체계와 월별 수지·주요 지출 하이라이트로 재정 흐름을 한눈에 비교할 수 있습니다.</p>
+      <p class="lead">연도별 격년 구분과 월별 핵심 지출 내역으로 재정 흐름을 차분하게 살펴볼 수 있습니다.</p>
     </div>
     <div class="masthead-meta">
       <span class="data-stamp">연간 {len(years)}건 · 월간 {len(months)}건</span>
