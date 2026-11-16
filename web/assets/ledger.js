@@ -4,6 +4,7 @@
   let ALL_RECORDS = [];
   let FILTERED = [];
   let curPage = 1;
+  let DEFAULT_YEAR = "전체";
 
   const GUBUN_LABELS = {
     "수입": "수입",
@@ -22,7 +23,7 @@
   function syncUrlParams(yr, gb, gw, q) {
     if (!window.history || !window.history.replaceState) return;
     const sp = new URLSearchParams();
-    if (yr && yr !== "전체") sp.set("year", yr);
+    if (yr && yr !== DEFAULT_YEAR) sp.set("year", yr);
     if (gb && gb !== "전체") sp.set("gubun", gb);
     if (gw && gw !== "전체") sp.set("gwan", gw);
     if (q) sp.set("q", q);
@@ -118,19 +119,29 @@
     const years = [...new Set(ALL_RECORDS.map((r) => r.year).filter(Boolean))].sort((a, b) => b - a);
     const gubuns = [...new Set(ALL_RECORDS.map((r) => r.gubun).filter(Boolean))];
     const gwans = [...new Set(ALL_RECORDS.map((r) => r.gwan).filter(Boolean))];
+    const currentYear = String(new Date().getFullYear());
+    DEFAULT_YEAR = years.map(String).includes(currentYear)
+      ? currentYear
+      : (years.length ? String(years[0]) : "전체");
 
     const lYear = document.getElementById("l-year");
+    lYear.innerHTML = "";
     years.forEach((y) => lYear.add(new Option(`${y}년`, String(y))));
+    const allYearLabel = years.length ? `전체 기간 (${years[years.length - 1]}~${years[0]})` : "전체 기간";
+    lYear.add(new Option(allYearLabel, "전체"));
+
     const lGubun = document.getElementById("l-gubun");
     gubuns.forEach((g) => lGubun.add(new Option(labelGubun(g), g)));
     const lGwan = document.getElementById("l-gwan");
     gwans.forEach((g) => lGwan.add(new Option(g, g)));
     const lQuery = document.getElementById("l-query");
 
-    // Apply initial URL query parameters (deep-link from dashboard)
+    // Apply initial URL query parameters (deep-link from dashboard) or default to current year
     const sp = new URLSearchParams(window.location.search);
-    if (sp.get("year") && [...lYear.options].some((o) => o.value === sp.get("year"))) {
+    if (sp.has("year") && [...lYear.options].some((o) => o.value === sp.get("year"))) {
       lYear.value = sp.get("year");
+    } else {
+      lYear.value = DEFAULT_YEAR;
     }
     if (sp.get("gubun") && [...lGubun.options].some((o) => o.value === sp.get("gubun"))) {
       lGubun.value = sp.get("gubun");
@@ -147,7 +158,7 @@
     const btnReset = document.getElementById("btn-ledger-reset");
     if (btnReset) {
       btnReset.addEventListener("click", () => {
-        lYear.value = "전체";
+        lYear.value = DEFAULT_YEAR;
         lGubun.value = "전체";
         lGwan.value = "전체";
         lQuery.value = "";

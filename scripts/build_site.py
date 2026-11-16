@@ -186,6 +186,8 @@ def render_shell(title: str, active_nav: str, rel_root: str, body_html: str, ext
 
 
 def build_index_page(meta):
+    min_y = meta["monthsRange"][0][:4]
+    max_y = meta["monthsRange"][1][:4]
     body = f"""
   <header class="page-masthead">
     <div>
@@ -200,7 +202,10 @@ def build_index_page(meta):
   <div class="toolbar" role="region" aria-label="대시보드 필터">
     <div class="filter-field">
       <label for="f-year">회계연도</label>
-      <select id="f-year"><option value="전체">전체 (2023~2026)</option></select>
+      <select id="f-year">
+        <option value="{max_y}" selected>{max_y}년</option>
+        <option value="전체">전체 기간 ({min_y}~{max_y})</option>
+      </select>
     </div>
     <div class="filter-field">
       <label for="f-unit">회계단위</label>
@@ -342,7 +347,7 @@ def build_ledger_page():
   <div class="toolbar" role="region" aria-label="원장 검색 필터">
     <div class="filter-field">
       <label for="l-year">연도</label>
-      <select id="l-year"><option value="전체">전체 연도</option></select>
+      <select id="l-year"><option value="전체">전체 기간</option></select>
     </div>
     <div class="filter-field">
       <label for="l-gubun">구분</label>
@@ -886,11 +891,11 @@ def build_reports_archive_page(years, months, records):
             "top_mok": top_mok,
         }
 
-    year_chips = [
-        f"<button type='button' class='year-chip' data-filter-year='all' aria-pressed='true'>전체 ({len(months)}개월)</button>"
-    ]
+    sorted_years = sorted(years, reverse=True)
+    default_year = sorted_years[0] if sorted_years else None
+    year_chips = []
     year_sections = []
-    for y in sorted(years, reverse=True):
+    for y in sorted_years:
         ytone = year_tone(y)
         y_months = sorted([ym for ym in months if ym.startswith(f"{y}-")], reverse=True)
         yr_r = [r for r in records if r["year"] == y]
@@ -900,8 +905,9 @@ def build_reports_archive_page(years, months, records):
             [max(month_info[ym]["sum"]["inc"], month_info[ym]["sum"]["exp"]) for ym in y_months] or [1]
         ) or 1
 
+        is_default = (y == default_year)
         year_chips.append(
-            f"<button type='button' class='year-chip' data-filter-year='{y}' data-year-tone='{ytone}' aria-pressed='false'>"
+            f"<button type='button' class='year-chip' data-filter-year='{y}' data-year-tone='{ytone}' aria-pressed='{str(is_default).lower()}'>"
             f"<span class='year-chip-swatch' aria-hidden='true'></span><span>{y}년 ({len(y_months)})</span></button>"
         )
 
@@ -939,8 +945,9 @@ def build_reports_archive_page(years, months, records):
                 f"</article>"
             )
 
+        hidden_attr = "" if is_default else " hidden"
         year_sections.append(
-            f"<section class='year-group' data-year='{y}' data-year-tone='{ytone}' aria-labelledby='yg-{y}'>"
+            f"<section class='year-group' data-year='{y}' data-year-tone='{ytone}' aria-labelledby='yg-{y}'{hidden_attr}>"
             f"<div class='year-group-head'>"
             f"<div class='year-group-title'><h3 id='yg-{y}'>{y}년</h3><span class='year-group-count'>{len(y_months)}개월</span></div>"
             f"<div class='year-group-summary'>"
@@ -951,6 +958,12 @@ def build_reports_archive_page(years, months, records):
             f"<div class='month-grid'>{''.join(month_cards)}</div>"
             f"</section>"
         )
+
+    year_chips.append(
+        f"<button type='button' class='year-chip' data-filter-year='all' aria-pressed='{str(default_year is None).lower()}'>전체 기간 ({len(months)}개월)</button>"
+    )
+    default_cnt = len([m for m in months if m.startswith(f"{default_year}-")]) if default_year else len(months)
+    init_status = f"{default_year}년 {default_cnt}개월만 모아보는 중" if default_year else f"전체 기간 {len(months)}개월 표시 중"
 
     body = f"""
   <header class="page-masthead">
@@ -974,7 +987,7 @@ def build_reports_archive_page(years, months, records):
   <section class="section-band" aria-labelledby="sec-monthly-arch">
     <div class="section-head">
       <h2 id="sec-monthly-arch">월간 운영위원회 재정보고 ({len(months)}개월)</h2>
-      <span id="archive-filter-status" class="section-sub" aria-live="polite">연도 버튼을 눌러 특정 연도만 모아볼 수 있습니다</span>
+      <span id="archive-filter-status" class="section-sub" aria-live="polite">{init_status}</span>
     </div>
     <div class="year-filter-bar" role="group" aria-label="연도별 보고서 필터">
       {''.join(year_chips)}
@@ -987,23 +1000,34 @@ def build_reports_archive_page(years, months, records):
   const groups = [...document.querySelectorAll(".year-group")];
   const statusEl = document.getElementById("archive-filter-status");
   if (!chips.length || !groups.length) return;
-  chips.forEach((chip) => {
-    chip.addEventListener("click", () => {
-      const target = chip.dataset.filterYear;
-      chips.forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
-      let visibleCount = 0;
-      groups.forEach((g) => {
-        const match = target === "all" || g.dataset.year === target;
-        g.hidden = !match;
-        if (match) visibleCount += g.querySelectorAll(".month-card").length;
-      });
-      if (statusEl) {
-        statusEl.textContent = target === "all"
-          ? `전체 연도 ${visibleCount}개월 표시 중`
-          : `${target}년 ${visibleCount}개월만 모아보는 중`;
-      }
+
+  function applyArchiveFilter(target) {
+    let activeChip = chips.find((c) => c.dataset.filterYear === target);
+    if (!activeChip) {
+      activeChip = chips.find((c) => c.dataset.filterYear !== "all") || chips[0];
+    }
+    if (!activeChip) return;
+    const resolved = activeChip.dataset.filterYear;
+    chips.forEach((c) => c.setAttribute("aria-pressed", String(c === activeChip)));
+    let visibleCount = 0;
+    groups.forEach((g) => {
+      const match = resolved === "all" || g.dataset.year === resolved;
+      g.hidden = !match;
+      if (match) visibleCount += g.querySelectorAll(".month-card").length;
     });
+    if (statusEl) {
+      statusEl.textContent = resolved === "all"
+        ? `전체 기간 ${visibleCount}개월 표시 중`
+        : `${resolved}년 ${visibleCount}개월만 모아보는 중`;
+    }
+  }
+
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => applyArchiveFilter(chip.dataset.filterYear));
   });
+
+  const currentYear = String(new Date().getFullYear());
+  applyArchiveFilter(currentYear);
 })();
 </script>"""
     return render_shell("보고서 아카이브", "reports", "..", body, archive_script, "노동조합 월간·연간 재정보고 아카이브")

@@ -43,7 +43,7 @@
 
   function buildLedgerHref(params) {
     const sp = new URLSearchParams();
-    if (params.year && params.year !== "전체") sp.set("year", params.year);
+    if (params.year) sp.set("year", params.year);
     if (params.gubun && params.gubun !== "전체") sp.set("gubun", params.gubun);
     if (params.gwan && params.gwan !== "전체") sp.set("gwan", params.gwan);
     if (params.q) sp.set("q", params.q);
@@ -809,12 +809,21 @@
       document.getElementById("sync-badge").textContent = `기준: ${META.monthsRange[0]} ~ ${META.monthsRange[1]} (${META.totalRecords}건)`;
     }
 
-    const years = [...new Set(ALL_RECORDS.map((r) => r.year).filter(Boolean))].sort();
+    const years = [...new Set(ALL_RECORDS.map((r) => r.year).filter(Boolean))].sort((a, b) => b - a);
     const units = [...new Set(ALL_RECORDS.map((r) => r.unit).filter(Boolean))];
     const funds = [...new Set(ALL_RECORDS.map((r) => r.fund).filter(Boolean))];
+    const currentYear = String(new Date().getFullYear());
+    const defaultYear = years.map(String).includes(currentYear)
+      ? currentYear
+      : (years.length ? String(years[0]) : "전체");
 
     const fYear = document.getElementById("f-year");
+    fYear.innerHTML = "";
     years.forEach((y) => fYear.add(new Option(`${y}년`, String(y))));
+    const allYearLabel = years.length ? `전체 기간 (${years[years.length - 1]}~${years[0]})` : "전체 기간";
+    fYear.add(new Option(allYearLabel, "전체"));
+    fYear.value = defaultYear;
+
     const fUnit = document.getElementById("f-unit");
     units.forEach((u) => fUnit.add(new Option(u, u)));
     const fFund = document.getElementById("f-fund");
@@ -825,7 +834,7 @@
       applyFilters();
     }));
     document.getElementById("btn-reset").addEventListener("click", () => {
-      fYear.value = "전체";
+      fYear.value = defaultYear;
       fUnit.value = "전체";
       fFund.value = "전체";
       drillState = { gwan: null, hang: null };
