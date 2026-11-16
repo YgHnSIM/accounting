@@ -19,11 +19,26 @@
     return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  function syncUrlParams(yr, gb, gw, q) {
+    if (!window.history || !window.history.replaceState) return;
+    const sp = new URLSearchParams();
+    if (yr && yr !== "전체") sp.set("year", yr);
+    if (gb && gb !== "전체") sp.set("gubun", gb);
+    if (gw && gw !== "전체") sp.set("gwan", gw);
+    if (q) sp.set("q", q);
+    const qs = sp.toString();
+    const nextUrl = qs ? `${window.location.pathname}?${qs}` : window.location.pathname;
+    window.history.replaceState(null, "", nextUrl);
+  }
+
   function applyFilters() {
     const yr = document.getElementById("l-year").value;
     const gb = document.getElementById("l-gubun").value;
     const gw = document.getElementById("l-gwan").value;
-    const q = document.getElementById("l-query").value.trim().toLowerCase();
+    const qRaw = document.getElementById("l-query").value.trim();
+    const q = qRaw.toLowerCase();
+
+    syncUrlParams(yr, gb, gw, qRaw);
 
     FILTERED = ALL_RECORDS.filter((r) => {
       if (yr !== "전체" && String(r.year) !== yr) return false;
@@ -53,8 +68,8 @@
     tbody.innerHTML = slice.map((r) => {
       const rowCls = r.gubun === "이월차액" ? ' class="muted"' : "";
       const etCls = r.exp_type ? "ctr" : "ctr empty-cell";
-      const inCls = r.inc ? "num" : "num empty-cell";
-      const outCls = r.exp ? "num" : "num empty-cell";
+      const inCls = r.inc ? "num num-inc" : "num empty-cell";
+      const outCls = r.exp ? "num num-exp" : "num empty-cell";
       const noteCls = r.note ? "" : "empty-cell";
       return `<tr${rowCls}>
         <th scope="row">${escapeHtml(r.date)} · ${escapeHtml(r.mok)}</th>
@@ -64,8 +79,8 @@
         <td data-label="분류(대·중·세부)">${escapeHtml(r.gwan)} &gt; ${escapeHtml(r.hang)} &gt; <b>${escapeHtml(r.mok)}</b></td>
         <td class="${etCls}" data-label="지출방식">${escapeHtml(r.exp_type)}</td>
         <td class="ctr" data-label="대상·귀속">${escapeHtml(r.target)}${r.attr_ym ? " (" + escapeHtml(r.attr_ym) + ")" : ""}</td>
-        <td class="${inCls}" data-label="수입금액">${fmt(r.inc)}</td>
-        <td class="${outCls}" data-label="지출금액">${fmt(r.exp)}</td>
+        <td class="${inCls}" data-label="수입금액">${r.inc ? "+" + fmt(r.inc) : ""}</td>
+        <td class="${outCls}" data-label="지출금액">${r.exp ? "-" + fmt(r.exp) : ""}</td>
         <td class="${noteCls}" data-label="내용(적요)">${escapeHtml(r.note)}</td>
       </tr>`;
     }).join("");
@@ -110,9 +125,35 @@
     gubuns.forEach((g) => lGubun.add(new Option(labelGubun(g), g)));
     const lGwan = document.getElementById("l-gwan");
     gwans.forEach((g) => lGwan.add(new Option(g, g)));
+    const lQuery = document.getElementById("l-query");
+
+    // Apply initial URL query parameters (deep-link from dashboard)
+    const sp = new URLSearchParams(window.location.search);
+    if (sp.get("year") && [...lYear.options].some((o) => o.value === sp.get("year"))) {
+      lYear.value = sp.get("year");
+    }
+    if (sp.get("gubun") && [...lGubun.options].some((o) => o.value === sp.get("gubun"))) {
+      lGubun.value = sp.get("gubun");
+    }
+    if (sp.get("gwan") && [...lGwan.options].some((o) => o.value === sp.get("gwan"))) {
+      lGwan.value = sp.get("gwan");
+    }
+    if (sp.get("q") || sp.get("mok")) {
+      lQuery.value = sp.get("q") || sp.get("mok");
+    }
 
     [lYear, lGubun, lGwan].forEach((el) => el.addEventListener("change", applyFilters));
-    document.getElementById("l-query").addEventListener("input", applyFilters);
+    lQuery.addEventListener("input", applyFilters);
+    const btnReset = document.getElementById("btn-ledger-reset");
+    if (btnReset) {
+      btnReset.addEventListener("click", () => {
+        lYear.value = "전체";
+        lGubun.value = "전체";
+        lGwan.value = "전체";
+        lQuery.value = "";
+        applyFilters();
+      });
+    }
     document.getElementById("btn-prev").addEventListener("click", () => { if (curPage > 1) { curPage--; renderPage(); } });
     document.getElementById("btn-next").addEventListener("click", () => { curPage++; renderPage(); });
     document.getElementById("btn-csv").addEventListener("click", downloadCsv);

@@ -187,54 +187,72 @@ def build_index_page(meta):
       <h2 id="sec-charts">월별 추이 및 활동별 시각화</h2>
       <span class="section-sub">항목 선택 시 하위 분류와 통계를 즉시 재계산합니다</span>
     </div>
+
     <div class="chart-grid">
       <section class="chart-card full">
         <div class="chart-head">
           <h3>월별 수입·지출 및 통장 잔액 추이</h3>
-          <span class="chart-hint">수입·지출 막대 및 잔액 꺾은선</span>
+          <span id="monthly-pan-hint" class="scroll-pan-badge" aria-live="polite">← 좌우로 밀어 이전 월 탐색 (최신월 기준)</span>
         </div>
-        <div class="chart-canvas-wrap"><canvas id="chart-monthly"></canvas></div>
+        <div id="monthly-scroll" class="chart-scroll-x" tabindex="0" role="region" aria-label="월별 수입·지출 및 통장 잔액 가로 스크롤 차트">
+          <div id="monthly-stage" class="chart-stage-wide"><canvas id="chart-monthly"></canvas></div>
+        </div>
       </section>
+    </div>
 
-      <section class="chart-card">
-        <div class="chart-head">
-          <h3>활동별 지출 탐색 (대분류 → 중분류 → 세부활동)</h3>
-          <span id="drill-hint" class="chart-hint" aria-live="polite">막대를 누르면 하위 분류를 탐색합니다</span>
-        </div>
-        <div id="drill-breadcrumbs" class="breadcrumb-bar"></div>
-        <div class="chart-canvas-wrap"><canvas id="chart-drill"></canvas></div>
-      </section>
+    <div class="chart-deck" aria-roledescription="carousel" aria-label="활동별 분석 차트 모음">
+      <nav id="chart-deck-tabs" class="chart-deck-tabs" aria-label="분석 차트 선택">
+        <button type="button" class="chart-deck-tab" aria-current="true">1. 활동별 지출 탐색</button>
+        <button type="button" class="chart-deck-tab">2. 세부활동 TOP 10</button>
+        <button type="button" class="chart-deck-tab">3. 지출방식별 구성비</button>
+        <button type="button" class="chart-deck-tab">4. 조합비 vs 교부금</button>
+      </nav>
 
-      <section class="chart-card">
-        <div class="chart-head">
-          <h3>주요 세부활동 지출 TOP 10</h3>
-          <span class="chart-hint">조합 주요 사업별 집행 규모</span>
-        </div>
-        <div class="chart-canvas-wrap"><canvas id="chart-top-mok"></canvas></div>
-      </section>
+      <div id="chart-deck-track" class="chart-deck-track" tabindex="0" role="group" aria-label="분석 차트 슬라이드">
+        <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 1번째: 활동별 지출 탐색">
+          <div class="chart-head">
+            <h3>활동별 지출 탐색 (대분류 → 중분류 → 세부활동)</h3>
+            <span id="drill-hint" class="chart-hint" aria-live="polite">막대를 누르면 하위 분류를 탐색합니다</span>
+          </div>
+          <div class="drill-bar-wrap">
+            <div id="drill-breadcrumbs" class="breadcrumb-bar"></div>
+            <a id="drill-ledger-link" class="drill-ledger-link" href="ledger.html">전체 지출 내역 보기 →</a>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-drill"></canvas></div>
+        </section>
 
-      <section class="chart-card">
-        <div class="chart-head">
-          <h3>지출방식별 구성비</h3>
-          <span class="chart-hint">식대·선물·인쇄 등 지출 수단</span>
-        </div>
-        <div class="chart-canvas-wrap"><canvas id="chart-exp-type"></canvas></div>
-      </section>
+        <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 2번째: 주요 세부활동 지출 TOP 10">
+          <div class="chart-head">
+            <h3>주요 세부활동 지출 TOP 10</h3>
+            <span class="chart-hint">조합 주요 사업별 집행 규모</span>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-top-mok"></canvas></div>
+        </section>
 
-      <section class="chart-card">
-        <div class="chart-head">
-          <h3>정기조합비 vs 지부 교부금 추이</h3>
-          <span class="chart-hint">조합비 수납과 지부 배분 비교</span>
-        </div>
-        <div class="chart-canvas-wrap"><canvas id="chart-dues-grant"></canvas></div>
-      </section>
+        <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 3번째: 지출방식별 구성비">
+          <div class="chart-head">
+            <h3>지출방식별 구성비</h3>
+            <span class="chart-hint">식대·선물·인쇄 등 지출 수단</span>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-exp-type"></canvas></div>
+        </section>
+
+        <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 4번째: 정기조합비 vs 지부 교부금 추이">
+          <div class="chart-head">
+            <h3>정기조합비 vs 지부 교부금 추이</h3>
+            <span class="chart-hint">조합비 수납과 지부 배분 비교</span>
+          </div>
+          <div class="chart-canvas-wrap"><canvas id="chart-dues-grant"></canvas></div>
+        </section>
+      </div>
+      <p id="chart-deck-status" class="visually-hidden" role="status" aria-live="polite"></p>
     </div>
   </section>
 
   <section class="section-band" aria-labelledby="sec-act-tbl">
     <div class="section-head">
       <h2 id="sec-act-tbl">선택 조건별 세부활동 지출 집계</h2>
-      <span class="section-sub">지출액 내림차순 정렬</span>
+      <span class="section-sub">세부활동명을 누르면 거래 탐색기로 이동해 상세 내역을 보여줍니다</span>
     </div>
     <div tabindex="0" role="region" aria-labelledby="sec-act-tbl" class="table-wrapper">
       <table>
@@ -281,6 +299,7 @@ def build_ledger_page():
       <label for="l-query">검색어 (내용·세부활동·지출방식)</label>
       <input id="l-query" type="search" placeholder="예: 운영위, 초복, 추석, 교부금">
     </div>
+    <button id="btn-ledger-reset" type="button" class="btn secondary">초기화</button>
   </div>
 
   <p id="ledger-stats" class="stats-line" aria-live="polite"></p>
@@ -522,8 +541,8 @@ def build_public_monthly_html(records, target_ym: str):
     for r in curr:
         cls = ' class="muted"' if r["gubun"] == "이월차액" else ""
         et_cls = "ctr" if r["exp_type"] else "ctr empty-cell"
-        iv_cls = "num" if r["inc"] else "num empty-cell"
-        ev_cls = "num" if r["exp"] else "num empty-cell"
+        iv_cls = "num num-inc" if r["inc"] else "num empty-cell"
+        ev_cls = "num num-exp" if r["exp"] else "num empty-cell"
         note_cls = "" if r["note"] else "empty-cell"
         tx_rows.append(
             f"<tr{cls}><th scope='row'>{html.escape(r['date'])} · {html.escape(r['mok'])}</th>"
@@ -531,11 +550,22 @@ def build_public_monthly_html(records, target_ym: str):
             f"<td class='ctr' data-label='구분'>{html.escape(gubun_disp.get(r['gubun'], r['gubun']))}</td>"
             f"<td data-label='분류(대·중·세부)'>{html.escape(r['gwan'])} &gt; {html.escape(r['hang'])} &gt; <b>{html.escape(r['mok'])}</b></td>"
             f"<td class='{et_cls}' data-label='지출방식'>{html.escape(r['exp_type'])}</td>"
-            f"<td class='{iv_cls}' data-label='수입'>{fmt_won(r['inc']) if r['inc'] else ''}</td>"
-            f"<td class='{ev_cls}' data-label='지출'>{fmt_won(r['exp']) if r['exp'] else ''}</td>"
+            f"<td class='{iv_cls}' data-label='수입'>{('+' + fmt_won(r['inc'])) if r['inc'] else ''}</td>"
+            f"<td class='{ev_cls}' data-label='지출'>{('-' + fmt_won(r['exp'])) if r['exp'] else ''}</td>"
             f"<td class='num' data-label='단위잔액'>{fmt_won(r['unit_bal'])}</td>"
             f"<td class='{note_cls}' data-label='내용'>{html.escape(r['note'])}</td></tr>"
         )
+
+    prev_ym = all_yms[idx_ym - 1] if idx_ym > 0 else None
+    next_ym = all_yms[idx_ym + 1] if idx_ym + 1 < len(all_yms) else None
+    prev_btn = f'<a class="btn secondary small" href="{prev_ym}.html">← {prev_ym} 보고서</a>' if prev_ym else '<button type="button" class="btn secondary small" disabled>← 이전 없음</button>'
+    next_btn = f'<a class="btn secondary small" href="{next_ym}.html">{next_ym} 보고서 →</a>' if next_ym else '<button type="button" class="btn secondary small" disabled>다음 없음 →</button>'
+    nav_bar = f"""
+  <nav class="report-nav-bar" aria-label="월간 보고서 이동">
+    {prev_btn}
+    <a class="btn secondary small" href="../index.html">전체 보고서 목록</a>
+    {next_btn}
+  </nav>"""
 
     y_n, m_n = target_ym.split("-")
     title = f"{y_n}년 {int(m_n)}월 운영위원회 재정보고"
@@ -543,12 +573,14 @@ def build_public_monthly_html(records, target_ym: str):
   <header class="page-masthead">
     <div>
       <h1>{title}</h1>
-      <p class="lead">공개 웹 보고서(개인 실명 비식별 처리) · <a class="back-link" href="../index.html">전체 보고서 목록</a></p>
+      <p class="lead">공개 웹 보고서(개인 실명 비식별 처리)</p>
     </div>
     <div class="masthead-meta">
       <span class="data-stamp">기준월: {target_ym}</span>
     </div>
   </header>
+
+  {nav_bar}
 
   <div class="kpi-strip" role="region" aria-label="당월 재정 요약">
     <div class="kpi"><div class="label">기초 잔액</div><div class="value">{fmt_won(prior_bal + cs['op'])}원</div></div>
@@ -584,7 +616,13 @@ def build_public_monthly_html(records, target_ym: str):
         <tbody>{''.join(tx_rows)}</tbody>
       </table>
     </div>
-  </section>"""
+  </section>
+
+  <nav class="report-nav-bar bottom" aria-label="하단 월간 보고서 이동">
+    {prev_btn}
+    <a class="btn secondary small" href="../index.html">전체 보고서 목록</a>
+    {next_btn}
+  </nav>"""
     return render_shell(title, "reports", "../..", body, "", f"{title} 공개 재정 요약")
 
 
@@ -634,17 +672,32 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
             f"<td class='num' data-label='비중'>{pct_s}</td></tr>"
         )
 
+    all_years = sorted({r["year"] for r in records if r["year"]})
+    idx_yr = all_years.index(target_year)
+    prev_y = all_years[idx_yr - 1] if idx_yr > 0 else None
+    next_y = all_years[idx_yr + 1] if idx_yr + 1 < len(all_years) else None
+    prev_btn = f'<a class="btn secondary small" href="{prev_y}.html">← {prev_y}년 결산</a>' if prev_y else '<button type="button" class="btn secondary small" disabled>← 이전 연도 없음</button>'
+    next_btn = f'<a class="btn secondary small" href="{next_y}.html">{next_y}년 결산 →</a>' if next_y else '<button type="button" class="btn secondary small" disabled>다음 연도 없음 →</button>'
+    nav_bar = f"""
+  <nav class="report-nav-bar" aria-label="연간 결산 보고서 이동">
+    {prev_btn}
+    <a class="btn secondary small" href="../index.html">전체 보고서 목록</a>
+    {next_btn}
+  </nav>"""
+
     title = f"{target_year}년 대의원대회 결산 보고서"
     body = f"""
   <header class="page-masthead">
     <div>
       <h1>{title}</h1>
-      <p class="lead">활동별 연간 결산 및 시각화 · <a class="back-link" href="../index.html">전체 보고서 목록</a></p>
+      <p class="lead">활동별 연간 결산 및 시각화</p>
     </div>
     <div class="masthead-meta">
       <span class="data-stamp">{target_year}년 결산</span>
     </div>
   </header>
+
+  {nav_bar}
 
   <div class="kpi-strip" role="region" aria-label="{target_year}년 재정 요약">
     <div class="kpi"><div class="label">기초 잔액</div><div class="value">{fmt_won(op_bal)}원</div></div>
@@ -657,15 +710,45 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
   <section class="section-band" aria-labelledby="sec-annual-charts">
     <div class="section-head">
       <h2 id="sec-annual-charts">1. 연간 재정 시각화</h2>
-      <span class="section-sub">월간 수지 추이와 분류별 집행 비중</span>
+      <span class="section-sub">차트를 누르면 고해상도 확대 창에서 좌우 슬라이드로 크게 볼 수 있습니다</span>
     </div>
     <div class="chart-grid">
-      <div class="chart-card full"><img src="../../assets/charts/{chart_names['monthly']}" alt="{target_year}년 월별 수입·지출 및 잔액 추이"></div>
-      <div class="chart-card"><img src="../../assets/charts/{chart_names['gwan']}" alt="{target_year}년 대분류별 지출 비중"></div>
-      <div class="chart-card"><img src="../../assets/charts/{chart_names['mok']}" alt="{target_year}년 세부활동 TOP 10"></div>
-      <div class="chart-card full"><img src="../../assets/charts/{chart_names['exp_type']}" alt="{target_year}년 지출방식별 현황"></div>
+      <figure class="chart-card full">
+        <button type="button" class="chart-zoom-trigger" data-zoom-src="../../assets/charts/{chart_names['monthly']}" data-zoom-title="{target_year}년 월별 수입·지출 및 잔액 추이">
+          <img src="../../assets/charts/{chart_names['monthly']}" alt="{target_year}년 월별 수입·지출 및 잔액 추이">
+          <span class="chart-zoom-caption"><span>월별 조합 수입·사업 지출 및 기말 잔액 추이</span><span>눌러서 크게 보기 ⊕</span></span>
+        </button>
+      </figure>
+      <figure class="chart-card">
+        <button type="button" class="chart-zoom-trigger" data-zoom-src="../../assets/charts/{chart_names['gwan']}" data-zoom-title="{target_year}년 대분류별 지출 비중">
+          <img src="../../assets/charts/{chart_names['gwan']}" alt="{target_year}년 대분류별 지출 비중">
+          <span class="chart-zoom-caption"><span>대분류별 사업 지출 비중</span><span>눌러서 크게 보기 ⊕</span></span>
+        </button>
+      </figure>
+      <figure class="chart-card">
+        <button type="button" class="chart-zoom-trigger" data-zoom-src="../../assets/charts/{chart_names['mok']}" data-zoom-title="{target_year}년 세부활동 TOP 10">
+          <img src="../../assets/charts/{chart_names['mok']}" alt="{target_year}년 세부활동 TOP 10">
+          <span class="chart-zoom-caption"><span>주요 세부활동별 지출 TOP 10</span><span>눌러서 크게 보기 ⊕</span></span>
+        </button>
+      </figure>
+      <figure class="chart-card full">
+        <button type="button" class="chart-zoom-trigger" data-zoom-src="../../assets/charts/{chart_names['exp_type']}" data-zoom-title="{target_year}년 지출방식별 현황">
+          <img src="../../assets/charts/{chart_names['exp_type']}" alt="{target_year}년 지출방식별 현황">
+          <span class="chart-zoom-caption"><span>지출방식별 집행 현황</span><span>눌러서 크게 보기 ⊕</span></span>
+        </button>
+      </figure>
     </div>
   </section>
+
+  <dialog id="chart-lightbox" class="chart-lightbox" aria-labelledby="lightbox-title">
+    <div class="lightbox-head">
+      <strong id="lightbox-title">차트 확대 보기</strong>
+      <button type="button" id="lightbox-close" class="btn secondary small">닫기</button>
+    </div>
+    <div class="lightbox-scroll">
+      <img id="lightbox-img" src="../../assets/charts/{chart_names['monthly']}" alt="확대 차트 이미지">
+    </div>
+  </dialog>
 
   <section class="section-band" aria-labelledby="sec-ac">
     <div class="section-head">
@@ -683,8 +766,33 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
         </tbody>
       </table>
     </div>
-  </section>"""
-    return render_shell(title, "reports", "../..", body, "", f"{title} 공개 결산")
+  </section>
+
+  <nav class="report-nav-bar bottom" aria-label="하단 연간 결산 보고서 이동">
+    {prev_btn}
+    <a class="btn secondary small" href="../index.html">전체 보고서 목록</a>
+    {next_btn}
+  </nav>"""
+    lightbox_script = """<script>
+(function(){
+  const dlg = document.getElementById("chart-lightbox");
+  const img = document.getElementById("lightbox-img");
+  const ttl = document.getElementById("lightbox-title");
+  const cls = document.getElementById("lightbox-close");
+  if (!dlg || typeof dlg.showModal !== "function") return;
+  document.querySelectorAll(".chart-zoom-trigger").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      img.src = btn.dataset.zoomSrc;
+      img.alt = btn.dataset.zoomTitle || "확대 차트";
+      ttl.textContent = btn.dataset.zoomTitle || "차트 확대 보기";
+      dlg.showModal();
+    });
+  });
+  cls.addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+})();
+</script>"""
+    return render_shell(title, "reports", "../..", body, lightbox_script, f"{title} 공개 결산")
 
 
 def build_reports_archive_page(years, months, records):

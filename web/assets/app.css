@@ -1,6 +1,18 @@
 /* Hallmark Ledger × Astryx Stone/Neutral Design System */
 @layer reset, tokens, base, components, responsive, print;
 
+@property --fade-start {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@property --fade-end {
+  syntax: "<length>";
+  inherits: false;
+  initial-value: 0px;
+}
+
 @layer reset {
   :where(
     html, body, header, main, footer, nav, section, article, aside,
@@ -139,6 +151,7 @@
     --chart-tooltip-bg: #16181d;
     --chart-tooltip-ink: #fcfcfa;
     --color-thead-rule: rgba(255, 255, 255, 0.16);
+    --color-backdrop: rgba(17, 19, 24, 0.72);
 
     /* Typography & Scales */
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
@@ -839,13 +852,256 @@
     inline-size: 100%;
   }
 
+  /* Pattern A: Intra-Chart Horizontal Panning for Wide Time-Series */
+  .chart-scroll-x {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-gutter: stable;
+    touch-action: pan-x pan-y;
+    --fade-size: 2.25rem;
+    --fade-dir: right;
+    --fade-start-pos: 0;
+    --fade-end-pos: 100%;
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to var(--fade-dir), black, transparent) var(--fade-start-pos) 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to var(--fade-dir), transparent, black) var(--fade-end-pos) 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: reveal-fade-start linear both, hide-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+
+  .chart-scroll-x.more-start {
+    --fade-start: var(--fade-size);
+  }
+
+  .chart-scroll-x.more-end {
+    --fade-end: var(--fade-size);
+  }
+
+  @keyframes reveal-fade-start {
+    to {
+      --fade-start: var(--fade-size);
+    }
+  }
+
+  @keyframes hide-fade-end {
+    from {
+      --fade-end: var(--fade-size);
+    }
+  }
+
+  .chart-stage-wide {
+    position: relative;
+    block-size: clamp(240px, 36dvh, 340px);
+    inline-size: 100%;
+    min-inline-size: var(--stage-min-width, 100%);
+  }
+
+  .scroll-pan-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding-block: 0.18rem;
+    padding-inline: 0.55rem;
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-control);
+    background-color: var(--color-well);
+    color: var(--color-ink-2);
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+
+  /* Pattern B: Secondary Analysis Charts Deck (Grid on Desktop, Swipe Deck on Mobile) */
+  .chart-deck {
+    margin-block-end: 1.5rem;
+  }
+
+  .chart-deck-tabs {
+    display: none;
+    overflow-x: auto;
+    gap: 0.35rem;
+    padding-block-end: 0.55rem;
+    margin-block-end: 0.65rem;
+    border-block-end: var(--rule-hair) solid var(--color-rule);
+    scroll-snap-type: inline proximity;
+    touch-action: manipulation;
+  }
+
+  .chart-deck-tab {
+    position: relative;
+    flex: none;
+    scroll-snap-align: start;
+    padding-block: 0.42rem;
+    padding-inline: 0.75rem;
+    background-color: var(--color-sheet);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-control);
+    color: var(--color-muted);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .chart-deck-tab:hover {
+    color: var(--color-ink);
+    background-color: var(--color-well);
+  }
+
+  .chart-deck-tab[aria-current="true"] {
+    color: var(--color-accent-soft-ink);
+    background-color: var(--color-accent-soft);
+    border-color: var(--color-accent);
+  }
+
+  .chart-deck-tab[aria-current="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    border-block-end: 3px solid var(--color-accent);
+  }
+
+  .chart-deck-track {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .drill-bar-wrap {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-block-end: 0.65rem;
+  }
+
   .breadcrumb-bar {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
     gap: 0.35rem;
-    margin-block-end: 0.65rem;
     font-size: 0.8rem;
+  }
+
+  .drill-ledger-link {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-accent);
+    text-decoration: none;
+    border-block-end: var(--rule-hair) solid var(--color-accent);
+    padding-block-end: 0.08rem;
+  }
+
+  .row-link {
+    color: var(--color-ink);
+    text-decoration: underline;
+    text-decoration-color: var(--color-rule-ui);
+    text-underline-offset: 0.2em;
+    font-weight: 700;
+  }
+
+  .row-link:hover {
+    color: var(--color-accent);
+    text-decoration-color: var(--color-accent);
+  }
+
+  td.num-inc {
+    color: var(--color-income);
+    font-weight: 600;
+  }
+
+  td.num-exp {
+    color: var(--color-expense);
+    font-weight: 600;
+  }
+
+  /* Report Prev/Next Navigation Bar */
+  .report-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding-block: 0.65rem;
+    padding-inline: 0.85rem;
+    background-color: var(--color-well);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-sheet);
+    margin-block-end: 1.25rem;
+    font-size: 0.84rem;
+  }
+
+  .report-nav-bar.bottom {
+    margin-block-start: 1.5rem;
+    margin-block-end: 0;
+  }
+
+  .report-nav-group {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    flex-wrap: wrap;
+  }
+
+  /* Annual Report Static Chart Zoom & Lightbox */
+  .chart-zoom-trigger {
+    display: block;
+    inline-size: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    cursor: zoom-in;
+    text-align: start;
+  }
+
+  .chart-zoom-caption {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.78rem;
+    color: var(--color-muted);
+    margin-block-start: 0.45rem;
+    padding-block-start: 0.4rem;
+    border-block-start: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .chart-lightbox {
+    max-inline-size: min(96dvw, 1120px);
+    max-block-size: 90dvh;
+    padding: 1rem;
+    background-color: var(--color-sheet);
+    color: var(--color-ink);
+    border: var(--rule-bar) solid var(--color-rule-strong);
+    border-radius: var(--radius-sheet);
+  }
+
+  .chart-lightbox::backdrop {
+    background-color: var(--color-backdrop);
+  }
+
+  .lightbox-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding-block-end: 0.65rem;
+    margin-block-end: 0.75rem;
+    border-block-end: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .lightbox-scroll {
+    overflow: auto;
+    max-block-size: calc(90dvh - 5.5rem);
+    overscroll-behavior: contain;
+  }
+
+  .lightbox-scroll img {
+    min-inline-size: min(760px, 165dvw);
+    inline-size: 100%;
+    block-size: auto;
   }
 
   .crumb-active {
@@ -1031,20 +1287,54 @@
     .chart-grid {
       grid-template-columns: 1fr;
     }
+
+    .chart-deck-tabs {
+      display: flex;
+    }
+
+    .chart-deck-track {
+      display: flex;
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      gap: 0.85rem;
+      padding-block-end: 0.35rem;
+      scrollbar-gutter: stable;
+      touch-action: manipulation;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      .chart-deck-track {
+        scroll-behavior: smooth;
+      }
+    }
+
+    .chart-deck-track > .chart-card {
+      flex: 0 0 100%;
+      scroll-snap-align: center;
+    }
   }
 
   @container main-panel (inline-size < 560px) {
     .kpi-strip {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
+
+    .kpi-strip > .kpi:last-child:nth-child(odd) {
+      grid-column: 1 / -1;
+    }
+
     .filter-field {
-      flex: 1 1 100%;
+      flex: 1 1 calc(50% - 0.5rem);
     }
   }
 
   @container main-panel (inline-size < 360px) {
     .kpi-strip {
       grid-template-columns: 1fr;
+    }
+
+    .filter-field {
+      flex: 1 1 100%;
     }
   }
 

@@ -38,6 +38,16 @@
     return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
 
+  function buildLedgerHref(params) {
+    const sp = new URLSearchParams();
+    if (params.year && params.year !== "전체") sp.set("year", params.year);
+    if (params.gubun && params.gubun !== "전체") sp.set("gubun", params.gubun);
+    if (params.gwan && params.gwan !== "전체") sp.set("gwan", params.gwan);
+    if (params.q) sp.set("q", params.q);
+    const qs = sp.toString();
+    return qs ? `ledger.html?${qs}` : "ledger.html";
+  }
+
   function summarize(recs) {
     let op = 0, inc = 0, exp = 0, trIn = 0, trOut = 0, adj = 0;
     for (const r of recs) {
@@ -128,6 +138,18 @@
       exps.push(ms.exp);
       bals.push(run);
     }
+
+    const scroller = document.getElementById("monthly-scroll");
+    const stage = document.getElementById("monthly-stage");
+    const panHint = document.getElementById("monthly-pan-hint");
+    const isWideSeries = yms.length > 14;
+    if (stage) {
+      stage.style.setProperty("--stage-min-width", isWideSeries ? `${Math.max(540, yms.length * 26)}px` : "100%");
+    }
+    if (panHint) {
+      panHint.textContent = isWideSeries ? "← 좌우로 밀어 이전 월 탐색 (최신월 기준)" : "수입·지출 막대 및 잔액 꺾은선";
+    }
+
     const ctx = document.getElementById("chart-monthly");
     charts.monthly = new Chart(ctx, {
       data: {
@@ -153,6 +175,14 @@
         },
       },
     });
+
+    if (scroller && isWideSeries) {
+      requestAnimationFrame(() => {
+        if (scroller.scrollWidth > scroller.clientWidth) {
+          scroller.scrollLeft = scroller.scrollWidth;
+        }
+      });
+    }
   }
 
   function updateDrillBreadcrumbs() {
@@ -172,6 +202,22 @@
         applyFilters();
       });
     });
+
+    const dlLink = document.getElementById("drill-ledger-link");
+    if (dlLink) {
+      const f = getFilters();
+      dlLink.href = buildLedgerHref({
+        year: f.year,
+        gubun: "지출",
+        gwan: drillState.gwan || "전체",
+        q: drillState.hang || "",
+      });
+      dlLink.textContent = drillState.hang
+        ? `'${drillState.hang}' 거래 내역 보기 →`
+        : drillState.gwan
+          ? `'${drillState.gwan}' 거래 내역 보기 →`
+          : "전체 지출 내역 보기 →";
+    }
   }
 
   function renderDrillChart(filtered, t) {
@@ -194,7 +240,7 @@
     }
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
     const hint = document.getElementById("drill-hint");
-    hint.textContent = field === "gwan" ? "막대를 누르면 중분류로 내려갑니다" : field === "hang" ? "막대를 누르면 세부활동으로 내려갑니다" : "세부활동별 상세 지출입니다";
+    hint.textContent = field === "gwan" ? "막대를 누르면 중분류로 내려갑니다" : field === "hang" ? "막대를 누르면 세부활동으로 내려갑니다" : "막대를 누르면 해당 거래 내역으로 이동합니다";
 
     const ctx = document.getElementById("chart-drill");
     charts.drill = new Chart(ctx, {
@@ -216,6 +262,13 @@
           } else if (field === "hang") {
             drillState = { gwan: drillState.gwan, hang: label };
             renderDrillChart(filtered, readChartTheme());
+          } else if (field === "mok") {
+            window.location.href = buildLedgerHref({
+              year: getFilters().year,
+              gubun: "지출",
+              gwan: drillState.gwan || "전체",
+              q: label,
+            });
           }
         },
         scales: {
@@ -337,16 +390,120 @@
       agg.set(key, cur);
     }
     const items = [...agg.values()].sort((a, b) => b.amt - a.amt);
-    tbody.innerHTML = items.map((it) => `
+    const curYear = getFilters().year;
+    tbody.innerHTML = items.map((it) => {
+      const href = buildLedgerHref({ year: curYear, gubun: "지출", gwan: it.gwan, q: it.mok });
+      return `
       <tr>
-        <th scope="row">${escapeHtml(it.mok)}</th>
+        <th scope="row"><a class="row-link" href="${escapeHtml(href)}">${escapeHtml(it.mok)}</a></th>
         <td data-label="대분류">${escapeHtml(it.gwan)}</td>
         <td data-label="중분류">${escapeHtml(it.hang)}</td>
         <td class="ctr" data-label="건수">${it.cnt}</td>
-        <td class="num" data-label="지출액">${fmt(it.amt)}원</td>
+        <td class="num num-exp" data-label="지출액">${fmt(it.amt)}원</td>
         <td class="num" data-label="비중">${(it.amt / totExp * 100).toFixed(1)}%</td>
-      </tr>
-    `).join("");
+      </tr>`;
+    }).join("");
+  }
+
+  function initScrollFadeFallback() {
+    if (window.CSS && CSS.supports && CSS.supports("animation-timeline", "scroll()")) return;
+    for (const scroller of document.querySelectorAll(".chart-scroll-x")) {
+      const start = document.createElement("div");
+      const end = document.createElement("div");
+      for (const s of [start, end]) {
+        s.setAttribute("aria-hidden", "true");
+        s.style.cssText = "min-inline-size: 1px; min-block-size: 1px;";
+      }
+      scroller.prepend(start);
+      scroller.append(end);
+      const obs = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          scroller.classList.toggle(e.target === start ? "more-start" : "more-end", !e.isIntersecting);
+        }
+      }, { root: scroller, rootMargin: "1px" });
+      obs.observe(start);
+      obs.observe(end);
+    }
+  }
+
+  function initChartDeck() {
+    const track = document.getElementById("chart-deck-track");
+    const tabsWrap = document.getElementById("chart-deck-tabs");
+    const statusEl = document.getElementById("chart-deck-status");
+    if (!track || !tabsWrap) return;
+
+    const slides = [...track.querySelectorAll(".chart-card")];
+    const tabs = [...tabsWrap.querySelectorAll(".chart-deck-tab")];
+    let pendingIndex = null;
+    let settledIndex = 0;
+    let rafId = 0;
+
+    function setActiveTab(idx) {
+      tabs.forEach((btn, i) => {
+        if (i === idx) btn.setAttribute("aria-current", "true");
+        else btn.removeAttribute("aria-current");
+      });
+    }
+
+    function nearestIndex() {
+      const center = track.scrollLeft + track.clientWidth / 2;
+      let best = 0;
+      let bestDist = Infinity;
+      slides.forEach((sl, i) => {
+        const slCenter = sl.offsetLeft - track.offsetLeft + sl.offsetWidth / 2;
+        const d = Math.abs(slCenter - center);
+        if (d < bestDist) {
+          bestDist = d;
+          best = i;
+        }
+      });
+      return best;
+    }
+
+    function onSettle() {
+      pendingIndex = null;
+      const idx = nearestIndex();
+      setActiveTab(idx);
+      if (idx !== settledIndex) {
+        settledIndex = idx;
+        if (statusEl && tabs[idx]) {
+          statusEl.textContent = `${slides.length}개 차트 중 ${idx + 1}번째: ${tabs[idx].textContent}`;
+        }
+      }
+    }
+
+    tabs.forEach((btn, i) => {
+      btn.addEventListener("click", () => {
+        const slide = slides[i];
+        if (!slide) return;
+        pendingIndex = i;
+        setActiveTab(i);
+        const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        track.scrollTo({
+          left: slide.offsetLeft - track.offsetLeft,
+          behavior: reduce ? "auto" : "smooth",
+        });
+        btn.scrollIntoView({ block: "nearest", inline: "nearest" });
+      });
+    });
+
+    track.addEventListener("scroll", () => {
+      if (pendingIndex !== null || rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        setActiveTab(nearestIndex());
+      });
+    }, { passive: true });
+
+    if ("onscrollend" in window) {
+      track.addEventListener("scrollend", onSettle);
+    } else {
+      let timer = 0;
+      track.addEventListener("scroll", () => {
+        clearTimeout(timer);
+        timer = setTimeout(onSettle, 140);
+      }, { passive: true });
+    }
   }
 
   async function init() {
@@ -388,6 +545,8 @@
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyFilters);
     }
 
+    initScrollFadeFallback();
+    initChartDeck();
     applyFilters();
   }
 
