@@ -61,10 +61,10 @@
     document.getElementById("kpi-open").textContent = fmt(opBal) + "원";
     document.getElementById("kpi-inc").textContent = fmt(sum.inc) + "원";
     document.getElementById("kpi-exp").textContent = fmt(sum.exp) + "원";
-    document.getElementById("kpi-tr").textContent = (sum.trNet >= 0 ? "+" : "") + fmt(sum.trNet) + "원";
-    document.getElementById("kpi-tr-sub").textContent = `전출 ${fmt(sum.trOut)} · 전입 ${fmt(sum.trIn)}`;
+    document.getElementById("kpi-tr").textContent = fmt(sum.trOut) + "원";
+    document.getElementById("kpi-tr-sub").textContent = `환수·회수 ${fmt(sum.trIn)}원`;
     document.getElementById("kpi-end").textContent = fmt(endBal) + "원";
-    document.getElementById("kpi-end-sub").textContent = `이월차액 ${sum.adj >= 0 ? "+" : ""}${fmt(sum.adj)} · ${filtered.length}건`;
+    document.getElementById("kpi-end-sub").textContent = `이월 조정 ${sum.adj >= 0 ? "+" : ""}${fmt(sum.adj)} · ${filtered.length}건`;
 
     renderMonthlyChart(filtered, opBal);
     renderDrillChart(filtered);
@@ -92,8 +92,8 @@
       data: {
         labels: yms,
         datasets: [
-          { type: "bar", label: "외부 순수입", data: incs, backgroundColor: "rgba(46, 117, 182, 0.85)", yAxisID: "y" },
-          { type: "bar", label: "외부 순지출", data: exps, backgroundColor: "rgba(197, 90, 17, 0.85)", yAxisID: "y" },
+          { type: "bar", label: "조합 수입", data: incs, backgroundColor: "rgba(46, 117, 182, 0.85)", yAxisID: "y" },
+          { type: "bar", label: "사업 지출", data: exps, backgroundColor: "rgba(197, 90, 17, 0.85)", yAxisID: "y" },
           { type: "line", label: "기말 잔액", data: bals, borderColor: "#1F4E78", backgroundColor: "#1F4E78", tension: 0.2, pointRadius: 3, yAxisID: "y1" },
         ],
       },
@@ -114,7 +114,7 @@
 
   function updateDrillBreadcrumbs() {
     const bar = document.getElementById("drill-breadcrumbs");
-    const parts = [`<button type="button" class="btn small ${!drillState.gwan ? "" : "secondary"}" data-level="root">전체 관</button>`];
+    const parts = [`<button type="button" class="btn small ${!drillState.gwan ? "" : "secondary"}" data-level="root">전체 대분류</button>`];
     if (drillState.gwan) {
       parts.push(`<span>&rsaquo;</span><button type="button" class="btn small ${!drillState.hang ? "" : "secondary"}" data-level="gwan">${escapeHtml(drillState.gwan)}</button>`);
     }
@@ -151,7 +151,7 @@
     }
     const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
     const hint = document.getElementById("drill-hint");
-    hint.textContent = field === "gwan" ? "막대를 클릭/터치하면 '항'으로 내려갑니다" : field === "hang" ? "막대를 클릭/터치하면 '목(활동)'으로 내려갑니다" : "최종 활동(목) 세부 내역입니다";
+    hint.textContent = field === "gwan" ? "막대를 누르면 중분류로 내려갑니다" : field === "hang" ? "막대를 누르면 세부활동으로 내려갑니다" : "세부활동별 상세 지출입니다";
 
     const ctx = document.getElementById("chart-drill");
     charts.drill = new Chart(ctx, {
@@ -248,7 +248,7 @@
         labels: keys,
         datasets: [
           { label: "정기조합비 수입", data: dues, backgroundColor: "#1F4E78" },
-          { label: "지부 교부금(내부이전)", data: grants, backgroundColor: "#BF9000" },
+          { label: "지부 교부금", data: grants, backgroundColor: "#BF9000" },
         ],
       },
       options: {
@@ -275,8 +275,8 @@
     tbody.innerHTML = items.map((it) => `
       <tr>
         <th scope="row">${escapeHtml(it.mok)}</th>
-        <td data-label="관(대분류)">${escapeHtml(it.gwan)}</td>
-        <td data-label="항(중분류)">${escapeHtml(it.hang)}</td>
+        <td data-label="대분류">${escapeHtml(it.gwan)}</td>
+        <td data-label="중분류">${escapeHtml(it.hang)}</td>
         <td class="ctr" data-label="건수">${it.cnt}</td>
         <td class="num" data-label="지출액">${fmt(it.amt)}원</td>
         <td class="num" data-label="비중">${(it.amt / totExp * 100).toFixed(1)}%</td>

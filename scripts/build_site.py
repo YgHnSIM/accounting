@@ -82,7 +82,7 @@ def render_shell(title: str, active_nav: str, rel_root: str, body_html: str, ext
         ("dashboard", "index.html", "대시보드"),
         ("ledger", "ledger.html", "거래 탐색기"),
         ("reports", "reports/index.html", "보고서 아카이브"),
-        ("coa", "coa.html", "계정과목·단위"),
+        ("coa", "coa.html", "회계기준·단위"),
     ]
     links_html = []
     for key, href, label in nav_items:
@@ -135,7 +135,7 @@ def build_index_page(meta):
     <div class="page-head">
       <div>
         <h1>노동조합 회계 대시보드</h1>
-        <p class="sub">3단계 활동 체계(관·항·목) 및 본부·지부 통합 기준의 실시간 재정 현황</p>
+        <p class="sub">대분류·중분류·세부활동 기준으로 한눈에 보는 조합 살림살이 현황</p>
       </div>
       <span id="sync-badge" class="status-pill">데이터 기준: {meta['monthsRange'][0]} ~ {meta['monthsRange'][1]} ({meta['totalRecords']}건)</span>
     </div>
@@ -147,27 +147,27 @@ def build_index_page(meta):
       </div>
       <div class="filter-field">
         <label for="f-unit">회계단위</label>
-        <select id="f-unit"><option value="전체">전체 (연결 기준)</option></select>
+        <select id="f-unit"><option value="전체">전체 (통합 기준)</option></select>
       </div>
       <div class="filter-field">
-        <label for="f-fund">재원구분</label>
-        <select id="f-fund"><option value="전체">전체 재원</option></select>
+        <label for="f-fund">자금 구분</label>
+        <select id="f-fund"><option value="전체">전체 자금</option></select>
       </div>
       <button id="btn-reset" type="button" class="btn secondary">초기화</button>
     </div>
 
     <div class="kpi-grid">
       <div class="kpi"><div class="label">기초 잔액</div><div id="kpi-open" class="value">-</div><div class="sub">기간 개시 통장잔액</div></div>
-      <div class="kpi"><div class="label">외부 순수입</div><div id="kpi-inc" class="value">-</div><div class="sub">조합비·찬조·기타</div></div>
-      <div class="kpi"><div class="label">외부 순지출</div><div id="kpi-exp" class="value">-</div><div class="sub">교부금 제외 순사업비</div></div>
-      <div class="kpi"><div class="label">내부이전 (전입-전출)</div><div id="kpi-tr" class="value">-</div><div id="kpi-tr-sub" class="sub">-</div></div>
+      <div class="kpi"><div class="label">조합 수입</div><div id="kpi-inc" class="value">-</div><div class="sub">조합비·찬조·기타수입</div></div>
+      <div class="kpi"><div class="label">사업 지출</div><div id="kpi-exp" class="value">-</div><div class="sub">지부 교부금 제외 순사업비</div></div>
+      <div class="kpi"><div class="label">지부 교부·지원</div><div id="kpi-tr" class="value">-</div><div id="kpi-tr-sub" class="sub">-</div></div>
       <div class="kpi"><div class="label">기말 잔액</div><div id="kpi-end" class="value">-</div><div id="kpi-end-sub" class="sub">-</div></div>
     </div>
 
     <div class="chart-grid">
       <section class="chart-card full">
         <div class="chart-head">
-          <h3>월별 외부 수지 및 통장 잔액 추이</h3>
+          <h3>월별 수입·지출 및 통장 잔액 추이</h3>
           <span class="chart-hint">수입·지출 막대 및 잔액 꺾은선</span>
         </div>
         <div class="chart-canvas-wrap"><canvas id="chart-monthly"></canvas></div>
@@ -175,8 +175,8 @@ def build_index_page(meta):
 
       <section class="chart-card">
         <div class="chart-head">
-          <h3>3단계 활동 드릴다운 (관 → 항 → 목)</h3>
-          <span id="drill-hint" class="chart-hint">막대를 클릭/터치해 하위 항목 탐색</span>
+          <h3>활동별 지출 탐색 (대분류 → 중분류 → 세부활동)</h3>
+          <span id="drill-hint" class="chart-hint">막대를 누르면 하위 분류를 탐색합니다</span>
         </div>
         <div id="drill-breadcrumbs" class="breadcrumb-bar"></div>
         <div class="chart-canvas-wrap"><canvas id="chart-drill"></canvas></div>
@@ -184,7 +184,7 @@ def build_index_page(meta):
 
       <section class="chart-card">
         <div class="chart-head">
-          <h3>주요 활동(목) 지출 TOP 10</h3>
+          <h3>주요 세부활동 지출 TOP 10</h3>
           <span class="chart-hint">조합 주요 사업별 집행 규모</span>
         </div>
         <div class="chart-canvas-wrap"><canvas id="chart-top-mok"></canvas></div>
@@ -192,8 +192,8 @@ def build_index_page(meta):
 
       <section class="chart-card">
         <div class="chart-head">
-          <h3>지출형태별 구성비</h3>
-          <span class="chart-hint">식대·선물·인쇄 등 물리적 지출 수단</span>
+          <h3>지출방식별 구성비</h3>
+          <span class="chart-hint">식대·선물·인쇄 등 지출 수단</span>
         </div>
         <div class="chart-canvas-wrap"><canvas id="chart-exp-type"></canvas></div>
       </section>
@@ -207,10 +207,10 @@ def build_index_page(meta):
       </section>
     </div>
 
-    <h2 id="sec-act-tbl" class="section-title">선택 조건별 활동(목) 세부 지출 집계</h2>
+    <h2 id="sec-act-tbl" class="section-title">선택 조건별 세부활동 지출 집계</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-act-tbl" class="table-wrapper">
       <table>
-        <thead><tr><th>목(활동)</th><th>관(대분류)</th><th>항(중분류)</th><th>건수</th><th>지출액</th><th>비중</th></tr></thead>
+        <thead><tr><th>세부활동</th><th>대분류</th><th>중분류</th><th>건수</th><th>지출액</th><th>비중</th></tr></thead>
         <tbody id="summary-tbody"></tbody>
       </table>
     </div>
@@ -244,11 +244,11 @@ def build_ledger_page():
         <select id="l-gubun"><option value="전체">전체 구분</option></select>
       </div>
       <div class="filter-field">
-        <label for="l-gwan">관(대분류)</label>
-        <select id="l-gwan"><option value="전체">전체 관</option></select>
+        <label for="l-gwan">대분류</label>
+        <select id="l-gwan"><option value="전체">전체 대분류</option></select>
       </div>
       <div class="filter-field">
-        <label for="l-query">검색어 (적요·활동·지출형태)</label>
+        <label for="l-query">검색어 (내용·세부활동·지출방식)</label>
         <input id="l-query" type="search" placeholder="예: 운영위, 초복, 추석, 교부금">
       </div>
     </div>
@@ -257,7 +257,7 @@ def build_ledger_page():
 
     <div tabindex="0" role="region" aria-label="거래 내역 목록" class="table-wrapper">
       <table>
-        <thead><tr><th>일자 · 활동</th><th>거래ID</th><th>단위</th><th>구분</th><th>계정(관·항·목)</th><th>지출형태</th><th>대상·귀속</th><th>수입금액</th><th>지출금액</th><th>적요(비고)</th></tr></thead>
+        <thead><tr><th>일자 · 세부활동</th><th>거래번호</th><th>단위</th><th>구분</th><th>분류(대·중·세부)</th><th>지출방식</th><th>대상·귀속</th><th>수입금액</th><th>지출금액</th><th>내용(적요)</th></tr></thead>
         <tbody id="ledger-tbody"></tbody>
       </table>
     </div>
@@ -287,11 +287,12 @@ def build_coa_page(coa_cfg, units_cfg):
         )
     coa_rows = []
     for a in coa_cfg["accounts"]:
+        cat_disp = "지부 교부·정산" if a["category"] == "내부이전" else ("이월 잔액 조정" if a["category"] == "이월차액" else a["category"])
         coa_rows.append(
             f"<tr><th scope='row'>{html.escape(a['mok'])}</th>"
-            f"<td class='ctr' data-label='구분'>{html.escape(a['category'])}</td>"
-            f"<td data-label='관(대분류)'>{html.escape(a['gwan'])}</td>"
-            f"<td data-label='항(중분류)'>{html.escape(a['hang'])}</td>"
+            f"<td class='ctr' data-label='구분'>{html.escape(cat_disp)}</td>"
+            f"<td data-label='대분류'>{html.escape(a['gwan'])}</td>"
+            f"<td data-label='중분류'>{html.escape(a['hang'])}</td>"
             f"<td data-label='설명'>{html.escape(a['description'])}</td></tr>"
         )
 
@@ -299,12 +300,12 @@ def build_coa_page(coa_cfg, units_cfg):
   <div class="page-card">
     <div class="page-head">
       <div>
-        <h1>3단계 계정과목표 및 회계단위 기준</h1>
-        <p class="sub">소규모 노동조합의 활동이 명확히 드러나도록 설계한 관·항·목 체계와 단위 레지스트리입니다.</p>
+        <h1>수입·지출 분류 기준 및 회계단위 안내</h1>
+        <p class="sub">조합의 활동이 한눈에 드러나도록 대분류·중분류·세부활동 3단계로 정리한 기준표입니다.</p>
       </div>
     </div>
 
-    <h2 id="sec-units" class="section-title">1. 회계단위 레지스트리</h2>
+    <h2 id="sec-units" class="section-title">1. 회계단위 안내 (본부 · 지부)</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-units" class="table-wrapper">
       <table>
         <thead><tr><th>코드</th><th>약칭</th><th>정식명칭</th><th>상태</th><th>운영기간</th><th>비고</th></tr></thead>
@@ -312,15 +313,15 @@ def build_coa_page(coa_cfg, units_cfg):
       </table>
     </div>
 
-    <h2 id="sec-coa-list" class="section-title">2. 3단계 계정과목표 (관 · 항 · 목 · {len(coa_cfg['accounts'])}개)</h2>
+    <h2 id="sec-coa-list" class="section-title">2. 수입·지출 분류 기준표 (대분류 · 중분류 · 세부활동 · {len(coa_cfg['accounts'])}개)</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-coa-list" class="table-wrapper">
       <table>
-        <thead><tr><th>목(활동)</th><th>구분</th><th>관(대분류)</th><th>항(중분류)</th><th>계정 설명</th></tr></thead>
+        <thead><tr><th>세부활동</th><th>구분</th><th>대분류</th><th>중분류</th><th>항목 설명</th></tr></thead>
         <tbody>{''.join(coa_rows)}</tbody>
       </table>
     </div>
   </div>"""
-    return render_shell("계정과목·단위", "coa", "", body, "", "노동조합 3단계 계정과목표 및 회계단위 안내")
+    return render_shell("회계기준·단위", "coa", "", body, "", "노동조합 수입·지출 분류 기준 및 회계단위 안내")
 
 
 def generate_public_charts(records, target_year: int, out_dir: Path):
@@ -341,8 +342,8 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax1 = plt.subplots(figsize=(10, 4.4), dpi=180)
     x = list(range(len(months)))
     w = 0.36
-    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="외부 순수입", color="#2E75B6")
-    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="외부 순지출", color="#C55A11")
+    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#2E75B6")
+    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#C55A11")
     ax1.set_ylabel("월간 수지 (만원)")
     ax1.set_ylim(0, max(m_inc + m_exp + [10]) * 1.15)
     ax1.set_xticks(x)
@@ -357,7 +358,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     l1, lb1 = ax1.get_legend_handles_labels()
     l2, lb2 = ax2.get_legend_handles_labels()
     ax1.legend(l1 + l2, lb1 + lb2, loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=3, frameon=True)
-    ax1.set_title(f"{target_year}년 월별 외부 수지 및 기말 잔액 추이 (단위: 만원)", fontsize=12, fontweight="bold", pad=30)
+    ax1.set_title(f"{target_year}년 월별 조합 수입·사업 지출 및 잔액 추이 (단위: 만원)", fontsize=12, fontweight="bold", pad=30)
     fig.tight_layout()
     p1 = out_dir / f"{target_year}_01_월별수지_잔액추이.png"
     fig.savefig(p1)
@@ -379,7 +380,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원 ({v*10000/tot_exp*100:.1f}%)", va="center", fontsize=9)
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
-    ax.set_title(f"{target_year}년 관(대분류)별 외부 순지출 비중", fontsize=11.5, fontweight="bold")
+    ax.set_title(f"{target_year}년 대분류별 사업 지출 비중", fontsize=11.5, fontweight="bold")
     ax.grid(axis="x", linestyle="--", alpha=0.4)
     fig.tight_layout()
     p2 = out_dir / f"{target_year}_02_관별지출비중.png"
@@ -401,7 +402,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.25 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
-    ax.set_title(f"{target_year}년 주요 활동(목)별 지출 TOP 10", fontsize=11.5, fontweight="bold")
+    ax.set_title(f"{target_year}년 주요 세부활동별 지출 TOP 10", fontsize=11.5, fontweight="bold")
     ax.grid(axis="x", linestyle="--", alpha=0.4)
     fig.tight_layout()
     p3 = out_dir / f"{target_year}_03_활동별TOP10.png"
@@ -423,7 +424,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원 ({v*10000/tot_exp*100:.1f}%)", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
-    ax.set_title(f"{target_year}년 지출형태별 집행 현황", fontsize=11.5, fontweight="bold")
+    ax.set_title(f"{target_year}년 지출방식별 집행 현황", fontsize=11.5, fontweight="bold")
     ax.grid(axis="x", linestyle="--", alpha=0.4)
     fig.tight_layout()
     p4 = out_dir / f"{target_year}_04_지출형태비중.png"
@@ -454,13 +455,18 @@ def build_public_monthly_html(records, target_ym: str):
         recent_rows.append(
             f"<tr{cls}><th scope='row'>{ym}</th>"
             f"<td class='num' data-label='기초잔액'>{fmt_won(op_m)}</td>"
-            f"<td class='num' data-label='외부 순수입'>{fmt_won(ms['inc'])}</td>"
-            f"<td class='num' data-label='외부 순지출'>{fmt_won(ms['exp'])}</td>"
-            f"<td class='num' data-label='내부이전(순)'>{fmt_won(ms['tr_net'])}</td>"
-            f"<td class='num' data-label='이월차액'>{fmt_won(ms['adj'])}</td>"
+            f"<td class='num' data-label='조합 수입'>{fmt_won(ms['inc'])}</td>"
+            f"<td class='num' data-label='사업 지출'>{fmt_won(ms['exp'])}</td>"
+            f"<td class='num' data-label='지부 교부·정산'>{fmt_won(ms['tr_net'])}</td>"
+            f"<td class='num' data-label='이월 조정'>{fmt_won(ms['adj'])}</td>"
             f"<td class='num' data-label='기말잔액'>{fmt_won(end_m)}</td></tr>"
         )
 
+    gubun_disp = {
+        "내부이전(전출)": "지부 교부·지원(전출)",
+        "내부이전(전입)": "지부 회수·환수(전입)",
+        "이월차액": "이월 잔액 조정",
+    }
     tx_rows = []
     for r in curr:
         cls = ' class="muted"' if r["gubun"] == "이월차액" else ""
@@ -471,13 +477,13 @@ def build_public_monthly_html(records, target_ym: str):
         tx_rows.append(
             f"<tr{cls}><th scope='row'>{html.escape(r['date'])} · {html.escape(r['mok'])}</th>"
             f"<td class='ctr' data-label='단위'>{html.escape(r['unit'])}</td>"
-            f"<td class='ctr' data-label='구분'>{html.escape(r['gubun'])}</td>"
-            f"<td data-label='계정(관·항·목)'>{html.escape(r['gwan'])} &gt; {html.escape(r['hang'])} &gt; <b>{html.escape(r['mok'])}</b></td>"
-            f"<td class='{et_cls}' data-label='지출형태'>{html.escape(r['exp_type'])}</td>"
+            f"<td class='ctr' data-label='구분'>{html.escape(gubun_disp.get(r['gubun'], r['gubun']))}</td>"
+            f"<td data-label='분류(대·중·세부)'>{html.escape(r['gwan'])} &gt; {html.escape(r['hang'])} &gt; <b>{html.escape(r['mok'])}</b></td>"
+            f"<td class='{et_cls}' data-label='지출방식'>{html.escape(r['exp_type'])}</td>"
             f"<td class='{iv_cls}' data-label='수입'>{fmt_won(r['inc']) if r['inc'] else ''}</td>"
             f"<td class='{ev_cls}' data-label='지출'>{fmt_won(r['exp']) if r['exp'] else ''}</td>"
             f"<td class='num' data-label='단위잔액'>{fmt_won(r['unit_bal'])}</td>"
-            f"<td class='{note_cls}' data-label='적요'>{html.escape(r['note'])}</td></tr>"
+            f"<td class='{note_cls}' data-label='내용'>{html.escape(r['note'])}</td></tr>"
         )
 
     y_n, m_n = target_ym.split("-")
@@ -493,22 +499,22 @@ def build_public_monthly_html(records, target_ym: str):
     </div>
     <div class="kpi-grid">
       <div class="kpi"><div class="label">기초 잔액</div><div class="value">{fmt_won(prior_bal + cs['op'])}원</div></div>
-      <div class="kpi"><div class="label">외부 순수입</div><div class="value">{fmt_won(cs['inc'])}원</div></div>
-      <div class="kpi"><div class="label">외부 순지출</div><div class="value">{fmt_won(cs['exp'])}원</div></div>
-      <div class="kpi"><div class="label">내부이전(순)</div><div class="value">{cs['tr_net']:+,}원</div></div>
+      <div class="kpi"><div class="label">조합 수입</div><div class="value">{fmt_won(cs['inc'])}원</div></div>
+      <div class="kpi"><div class="label">사업 지출</div><div class="value">{fmt_won(cs['exp'])}원</div></div>
+      <div class="kpi"><div class="label">지부 교부·지원</div><div class="value">{fmt_won(cs['tr_out'])}원</div></div>
       <div class="kpi"><div class="label">기말 잔액</div><div class="value">{fmt_won(end_bal)}원</div></div>
     </div>
     <h2 id="sec-r" class="section-title">1. 최근 6개월 수지 추이</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-r" class="table-wrapper">
       <table>
-        <thead><tr><th>보고월</th><th>기초잔액</th><th>외부 순수입</th><th>외부 순지출</th><th>내부이전(순)</th><th>이월차액</th><th>기말잔액</th></tr></thead>
+        <thead><tr><th>보고월</th><th>기초잔액</th><th>조합 수입</th><th>사업 지출</th><th>지부 교부·정산</th><th>이월 조정</th><th>기말잔액</th></tr></thead>
         <tbody>{''.join(recent_rows)}</tbody>
       </table>
     </div>
     <h2 id="sec-d" class="section-title">2. 당월 세부 거래 내역 ({len(curr)}건)</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-d" class="table-wrapper">
       <table>
-        <thead><tr><th>일자 · 활동</th><th>단위</th><th>구분</th><th>계정(관·항·목)</th><th>지출형태</th><th>수입</th><th>지출</th><th>단위잔액</th><th>적요</th></tr></thead>
+        <thead><tr><th>일자 · 세부활동</th><th>단위</th><th>구분</th><th>분류(대·중·세부)</th><th>지출방식</th><th>수입</th><th>지출</th><th>단위잔액</th><th>내용</th></tr></thead>
         <tbody>{''.join(tx_rows)}</tbody>
       </table>
     </div>
@@ -540,19 +546,21 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
             prv_v = sum((r["exp"] if "전출" in r["gubun"] else r["inc"]) for r in prev_recs if r["gwan"] == gw and r["hang"] == ha and r["mok"] == mo)
             cnt = sum(1 for r in y_recs if r["gwan"] == gw and r["hang"] == ha and r["mok"] == mo)
             pct_s = "-"
+            cat_disp = "지부 교부·정산"
         else:
             fld = "inc" if cat == "수입" else "exp"
             cur_v = sum(r[fld] for r in y_recs if r["gubun"] == cat and r["gwan"] == gw and r["hang"] == ha and r["mok"] == mo)
             prv_v = sum(r[fld] for r in prev_recs if r["gubun"] == cat and r["gwan"] == gw and r["hang"] == ha and r["mok"] == mo)
             cnt = sum(1 for r in y_recs if r["gubun"] == cat and r["gwan"] == gw and r["hang"] == ha and r["mok"] == mo)
             pct_s = f"{cur_v / (tot_inc if cat == '수입' else tot_exp) * 100:.1f}%"
+            cat_disp = cat
         if cur_v == 0 and prv_v == 0:
             continue
         coa_rows.append(
             f"<tr><th scope='row'>{html.escape(mo)}</th>"
-            f"<td class='ctr' data-label='구분'>{cat}</td>"
-            f"<td data-label='관'>{html.escape(gw)}</td>"
-            f"<td data-label='항'>{html.escape(ha)}</td>"
+            f"<td class='ctr' data-label='구분'>{cat_disp}</td>"
+            f"<td data-label='대분류'>{html.escape(gw)}</td>"
+            f"<td data-label='중분류'>{html.escape(ha)}</td>"
             f"<td class='ctr' data-label='건수'>{cnt}</td>"
             f"<td class='num' data-label='{prev_year}년'>{fmt_won(prv_v) if ps else '-'}</td>"
             f"<td class='num' data-label='{target_year}년'><b>{fmt_won(cur_v)}</b></td>"
@@ -566,32 +574,32 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
     <div class="page-head">
       <div>
         <h1>{title}</h1>
-        <p class="sub">3단계 활동별 연간 결산 및 시각화 · <a href="../index.html">전체 보고서 목록</a></p>
+        <p class="sub">활동별 연간 결산 및 시각화 · <a href="../index.html">전체 보고서 목록</a></p>
       </div>
       <span class="status-pill">{target_year}년 결산</span>
     </div>
     <div class="kpi-grid">
       <div class="kpi"><div class="label">기초 잔액</div><div class="value">{fmt_won(op_bal)}원</div></div>
-      <div class="kpi"><div class="label">외부 순수입</div><div class="value">{fmt_won(cs['inc'])}원</div></div>
-      <div class="kpi"><div class="label">외부 순지출</div><div class="value">{fmt_won(cs['exp'])}원</div></div>
-      <div class="kpi"><div class="label">내부이전 전출</div><div class="value">{fmt_won(cs['tr_out'])}원</div></div>
+      <div class="kpi"><div class="label">조합 수입</div><div class="value">{fmt_won(cs['inc'])}원</div></div>
+      <div class="kpi"><div class="label">사업 지출</div><div class="value">{fmt_won(cs['exp'])}원</div></div>
+      <div class="kpi"><div class="label">지부 교부·지원</div><div class="value">{fmt_won(cs['tr_out'])}원</div></div>
       <div class="kpi"><div class="label">기말 잔액</div><div class="value">{fmt_won(end_bal)}원</div></div>
     </div>
     <h2 class="section-title">1. 연간 재정 시각화</h2>
     <div class="chart-grid">
-      <div class="chart-card full"><img src="../../assets/charts/{chart_names['monthly']}" alt="{target_year}년 월별 수지 및 잔액 추이"></div>
-      <div class="chart-card"><img src="../../assets/charts/{chart_names['gwan']}" alt="{target_year}년 관별 지출 비중"></div>
-      <div class="chart-card"><img src="../../assets/charts/{chart_names['mok']}" alt="{target_year}년 활동별 TOP 10"></div>
-      <div class="chart-card full"><img src="../../assets/charts/{chart_names['exp_type']}" alt="{target_year}년 지출형태별 현황"></div>
+      <div class="chart-card full"><img src="../../assets/charts/{chart_names['monthly']}" alt="{target_year}년 월별 수입·지출 및 잔액 추이"></div>
+      <div class="chart-card"><img src="../../assets/charts/{chart_names['gwan']}" alt="{target_year}년 대분류별 지출 비중"></div>
+      <div class="chart-card"><img src="../../assets/charts/{chart_names['mok']}" alt="{target_year}년 세부활동 TOP 10"></div>
+      <div class="chart-card full"><img src="../../assets/charts/{chart_names['exp_type']}" alt="{target_year}년 지출방식별 현황"></div>
     </div>
-    <h2 id="sec-ac" class="section-title">2. 3단계 계정과목(관·항·목) 결산표</h2>
+    <h2 id="sec-ac" class="section-title">2. 활동별 연간 결산표 (대분류 · 중분류 · 세부활동)</h2>
     <div tabindex="0" role="region" aria-labelledby="sec-ac" class="table-wrapper">
       <table>
-        <thead><tr><th>목(활동)</th><th>구분</th><th>관</th><th>항</th><th>건수</th><th>{prev_year}년</th><th>{target_year}년</th><th>증감</th><th>비중</th></tr></thead>
+        <thead><tr><th>세부활동</th><th>구분</th><th>대분류</th><th>중분류</th><th>건수</th><th>{prev_year}년</th><th>{target_year}년</th><th>증감</th><th>비중</th></tr></thead>
         <tbody>
           {''.join(coa_rows)}
-          <tr class="subtot"><th scope="row">외부 순수입 합계</th><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="num" data-label="{prev_year}년">{fmt_won(ps['inc']) if ps else '-'}</td><td class="num" data-label="{target_year}년">{fmt_won(cs['inc'])}</td><td class="num" data-label="증감">{f"{cs['inc']-ps['inc']:+,}" if ps else '-'}</td><td class="num" data-label="비중">100.0%</td></tr>
-          <tr class="subtot"><th scope="row">외부 순지출 합계</th><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="num" data-label="{prev_year}년">{fmt_won(ps['exp']) if ps else '-'}</td><td class="num" data-label="{target_year}년">{fmt_won(cs['exp'])}</td><td class="num" data-label="증감">{f"{cs['exp']-ps['exp']:+,}" if ps else '-'}</td><td class="num" data-label="비중">100.0%</td></tr>
+          <tr class="subtot"><th scope="row">조합 수입 합계</th><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="num" data-label="{prev_year}년">{fmt_won(ps['inc']) if ps else '-'}</td><td class="num" data-label="{target_year}년">{fmt_won(cs['inc'])}</td><td class="num" data-label="증감">{f"{cs['inc']-ps['inc']:+,}" if ps else '-'}</td><td class="num" data-label="비중">100.0%</td></tr>
+          <tr class="subtot"><th scope="row">사업 지출 합계</th><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="empty-cell"></td><td class="num" data-label="{prev_year}년">{fmt_won(ps['exp']) if ps else '-'}</td><td class="num" data-label="{target_year}년">{fmt_won(cs['exp'])}</td><td class="num" data-label="증감">{f"{cs['exp']-ps['exp']:+,}" if ps else '-'}</td><td class="num" data-label="비중">100.0%</td></tr>
         </tbody>
       </table>
     </div>
@@ -607,7 +615,7 @@ def build_reports_archive_page(years, months, records):
         lbl = f"{y}년 대의원대회 결산" + (" (1~9월)" if y == 2026 else "")
         ann_cards.append(
             f"<article class='report-card'><div><h3>{lbl}</h3>"
-            f"<p>순수입 {fmt_won(s['inc'])}원 · 순지출 {fmt_won(s['exp'])}원 · 교부금 {fmt_won(s['tr_out'])}원</p></div>"
+            f"<p>조합 수입 {fmt_won(s['inc'])}원 · 사업 지출 {fmt_won(s['exp'])}원 · 교부금 {fmt_won(s['tr_out'])}원</p></div>"
             f"<a class='btn small' href='annual/{y}.html'>결산 보고서 열기</a></article>"
         )
 

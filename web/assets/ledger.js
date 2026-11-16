@@ -5,6 +5,16 @@
   let FILTERED = [];
   let curPage = 1;
 
+  const GUBUN_LABELS = {
+    "수입": "수입",
+    "지출": "지출",
+    "내부이전(전출)": "지부 교부·지원(전출)",
+    "내부이전(전입)": "지부 회수·환수(전입)",
+    "기초이월": "기초이월",
+    "이월차액": "이월 잔액 조정",
+  };
+  const labelGubun = (g) => GUBUN_LABELS[g] || g;
+
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
@@ -48,15 +58,15 @@
       const noteCls = r.note ? "" : "empty-cell";
       return `<tr${rowCls}>
         <th scope="row">${escapeHtml(r.date)} · ${escapeHtml(r.mok)}</th>
-        <td class="ctr" data-label="거래ID">${escapeHtml(r.tx_id)}</td>
+        <td class="ctr" data-label="거래번호">${escapeHtml(r.tx_id)}</td>
         <td class="ctr" data-label="단위">${escapeHtml(r.unit)}</td>
-        <td class="ctr" data-label="구분">${escapeHtml(r.gubun)}</td>
-        <td data-label="계정(관·항·목)">${escapeHtml(r.gwan)} &gt; ${escapeHtml(r.hang)} &gt; <b>${escapeHtml(r.mok)}</b></td>
-        <td class="${etCls}" data-label="지출형태">${escapeHtml(r.exp_type)}</td>
+        <td class="ctr" data-label="구분">${escapeHtml(labelGubun(r.gubun))}</td>
+        <td data-label="분류(대·중·세부)">${escapeHtml(r.gwan)} &gt; ${escapeHtml(r.hang)} &gt; <b>${escapeHtml(r.mok)}</b></td>
+        <td class="${etCls}" data-label="지출방식">${escapeHtml(r.exp_type)}</td>
         <td class="ctr" data-label="대상·귀속">${escapeHtml(r.target)}${r.attr_ym ? " (" + escapeHtml(r.attr_ym) + ")" : ""}</td>
         <td class="${inCls}" data-label="수입금액">${fmt(r.inc)}</td>
         <td class="${outCls}" data-label="지출금액">${fmt(r.exp)}</td>
-        <td class="${noteCls}" data-label="적요(비고)">${escapeHtml(r.note)}</td>
+        <td class="${noteCls}" data-label="내용(적요)">${escapeHtml(r.note)}</td>
       </tr>`;
     }).join("");
 
@@ -66,10 +76,10 @@
   }
 
   function downloadCsv() {
-    const header = ["거래ID", "회계단위", "연도", "보고월", "거래일자", "구분", "관", "항", "목", "지출형태", "재원구분", "대상", "귀속월", "수입금액", "지출금액", "적요"];
+    const header = ["거래번호", "회계단위", "연도", "보고월", "거래일자", "구분", "대분류", "중분류", "세부활동", "지출방식", "자금구분", "대상", "귀속월", "수입금액", "지출금액", "내용"];
     const lines = [header.join(",")];
     for (const r of FILTERED) {
-      const vals = [r.tx_id, r.unit, r.year, r.ym, r.date, r.gubun, r.gwan, r.hang, r.mok, r.exp_type, r.fund, r.target, r.attr_ym, r.inc || "", r.exp || "", r.note]
+      const vals = [r.tx_id, r.unit, r.year, r.ym, r.date, labelGubun(r.gubun), r.gwan, r.hang, r.mok, r.exp_type, r.fund, r.target, r.attr_ym, r.inc || "", r.exp || "", r.note]
         .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`);
       lines.push(vals.join(","));
     }
@@ -97,7 +107,7 @@
     const lYear = document.getElementById("l-year");
     years.forEach((y) => lYear.add(new Option(`${y}년`, String(y))));
     const lGubun = document.getElementById("l-gubun");
-    gubuns.forEach((g) => lGubun.add(new Option(g, g)));
+    gubuns.forEach((g) => lGubun.add(new Option(labelGubun(g), g)));
     const lGwan = document.getElementById("l-gwan");
     gwans.forEach((g) => lGwan.add(new Option(g, g)));
 
