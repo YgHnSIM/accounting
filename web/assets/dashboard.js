@@ -5,6 +5,8 @@
   let META = {};
   const charts = {};
   let drillState = { gwan: null, hang: null };
+  let monthlyMode = "fit";
+  let monthlyLabels = [];
 
   function readChartTheme() {
     const cs = getComputedStyle(document.documentElement);
@@ -30,6 +32,7 @@
       tooltipBg: tok("--chart-tooltip-bg", "#16181d"),
       tooltipInk: tok("--chart-tooltip-ink", "#fcfcfa"),
       sheet: tok("--color-sheet", "#fcfcfa"),
+      minimapFill: tok("--minimap-fill", "rgba(27, 64, 121, 0.12)"),
       font: tok("--font-sans", "system-ui, sans-serif"),
     };
   }
@@ -151,9 +154,39 @@
     renderSummaryTable(filtered, sum.exp || 1);
   }
 
+  function syncMinimapLens() {
+    const scroller = document.getElementById("monthly-scroll");
+    const lens = document.getElementById("minimap-lens");
+    const rangeEl = document.getElementById("minimap-range");
+    const viewport = document.getElementById("minimap-viewport");
+    if (!scroller || !lens || !monthlyLabels.length) return;
+
+    const totalW = scroller.scrollWidth || 1;
+    const viewW = scroller.clientWidth || totalW;
+    const maxScroll = Math.max(0, totalW - viewW);
+    const leftRatio = Math.min(1, Math.max(0, scroller.scrollLeft / totalW));
+    const widthRatio = Math.min(1, Math.max(0.08, viewW / totalW));
+
+    lens.style.setProperty("--lens-left", `${(leftRatio * 100).toFixed(2)}%`);
+    lens.style.setProperty("--lens-width", `${(widthRatio * 100).toFixed(2)}%`);
+
+    const n = monthlyLabels.length;
+    const startIdx = Math.min(n - 1, Math.max(0, Math.floor(leftRatio * n)));
+    const endIdx = Math.min(n - 1, Math.max(startIdx, Math.ceil((leftRatio + widthRatio) * n) - 1));
+    const rangeLabel = startIdx === endIdx ? monthlyLabels[startIdx] : `${monthlyLabels[startIdx]} ~ ${monthlyLabels[endIdx]}`;
+    if (rangeEl) rangeEl.textContent = `표시: ${rangeLabel}`;
+    if (viewport) {
+      const pct = maxScroll > 0 ? Math.round((scroller.scrollLeft / maxScroll) * 100) : 100;
+      viewport.setAttribute("aria-valuenow", String(pct));
+      viewport.setAttribute("aria-valuetext", rangeLabel);
+    }
+  }
+
   function renderMonthlyChart(filtered, opBal, t) {
     destroyChart("monthly");
+    destroyChart("monthlyMinimap");
     const yms = [...new Set(filtered.map((r) => r.ym).filter(Boolean))].sort();
+    monthlyLabels = yms;
     let run = opBal;
     const incs = [], exps = [], bals = [];
     for (const ym of yms) {
@@ -167,13 +200,18 @@
 
     const scroller = document.getElementById("monthly-scroll");
     const stage = document.getElementById("monthly-stage");
-    const panHint = document.getElementById("monthly-pan-hint");
-    const isWideSeries = yms.length > 6;
+    const switchEl = document.getElementById("monthly-mode-switch");
+    const minimapWrap = document.getElementById("monthly-minimap-wrap");
+    const btnFit = document.getElementById("btn-mode-fit");
+    const btnPan = document.getElementById("btn-mode-pan");
+
+    const canExpand = yms.length > 6;
+    const usePan = canExpand && monthlyMode === "pan";
+    if (switchEl) switchEl.hidden = !canExpand;
+    if (btnFit) btnFit.setAttribute("aria-pressed", String(!usePan));
+    if (btnPan) btnPan.setAttribute("aria-pressed", String(usePan));
     if (stage) {
-      stage.style.setProperty("--stage-min-width", isWideSeries ? `${Math.max(480, yms.length * 40)}px` : "100%");
-    }
-    if (panHint) {
-      panHint.textContent = isWideSeries ? "← 좌우로 밀어 월별 추이 탐색" : "수입·지출 막대 및 잔액 꺾은선";
+      stage.style.setProperty("--stage-min-width", usePan ? `${Math.max(540, yms.length * 40)}px` : "100%");
     }
 
     const showMonthlyDefault = () => {
@@ -194,7 +232,18 @@
         datasets: [
           { type: "bar", label: "조합 수입", data: incs, backgroundColor: t.income, borderRadius: 2, yAxisID: "y" },
           { type: "bar", label: "사업 지출", data: exps, backgroundColor: t.expense, borderRadius: 2, yAxisID: "y" },
-          { type: "line", label: "기말 잔액", data: bals, borderColor: t.cobalt, backgroundColor: t.cobalt, tension: 0.18, pointRadius: 2.5, pointHoverRadius: 5, borderWidth: 2, yAxisID: "y1" },
+          {
+            type: "line",
+            label: "기말 잔액",
+            data: bals,
+            borderColor: t.cobalt,
+            backgroundColor: t.cobalt,
+            tension: 0.18,
+            pointRadius: usePan ? 2.5 : (yms.length > 18 ? 1.5 : 2.5),
+            pointHoverRadius: 5,
+            borderWidth: 2,
+            yAxisID: "y1",
+          },
         ],
       },
       options: {
@@ -205,7 +254,14 @@
           x: {
             ...baseScaleOpts(t),
             grid: { display: false },
-            ticks: { ...baseScaleOpts(t).ticks, maxRotation: 0, autoSkipPadding: 14, font: { family: t.font, size: 10 } },
+            ticks: {
+              ...baseScaleOpts(t).ticks,
+              maxRotation: 0,
+              autoSkip: !usePan,
+              maxTicksLimit: usePan ? undefined : (yms.length > 18 ? 6 : 8),
+              autoSkipPadding: 14,
+              font: { family: t.font, size: 10 },
+            },
           },
           y: {
             ...baseScaleOpts(t),
@@ -233,12 +289,52 @@
       },
     });
 
-    if (scroller && isWideSeries) {
-      requestAnimationFrame(() => {
-        if (scroller.scrollWidth > scroller.clientWidth) {
+    if (minimapWrap) {
+      minimapWrap.hidden = !usePan;
+    }
+
+    if (usePan && yms.length) {
+      const mmCanvas = document.getElementById("chart-monthly-minimap");
+      if (mmCanvas) {
+        charts.monthlyMinimap = new Chart(mmCanvas, {
+          type: "line",
+          data: {
+            labels: yms,
+            datasets: [{
+              data: bals,
+              borderColor: t.cobalt,
+              backgroundColor: t.minimapFill,
+              fill: true,
+              borderWidth: 1.5,
+              pointRadius: 0,
+              tension: 0.2,
+            }],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            events: [],
+            layout: { padding: { top: 4, bottom: 2, left: 0, right: 0 } },
+            scales: {
+              x: { display: false },
+              y: { display: false, beginAtZero: true },
+            },
+            plugins: {
+              legend: { display: false },
+              tooltip: { enabled: false },
+            },
+          },
+        });
+      }
+      if (scroller) {
+        requestAnimationFrame(() => {
           scroller.scrollLeft = scroller.scrollWidth;
-        }
-      });
+          syncMinimapLens();
+        });
+      }
+    } else if (scroller) {
+      scroller.scrollLeft = 0;
     }
   }
 
@@ -627,6 +723,80 @@
     }
   }
 
+  function initMonthlyModeAndMinimap() {
+    const btnFit = document.getElementById("btn-mode-fit");
+    const btnPan = document.getElementById("btn-mode-pan");
+    const scroller = document.getElementById("monthly-scroll");
+    const viewport = document.getElementById("minimap-viewport");
+
+    const setMode = (nextMode) => {
+      if (monthlyMode === nextMode) return;
+      monthlyMode = nextMode;
+      applyFilters();
+    };
+    if (btnFit) btnFit.addEventListener("click", () => setMode("fit"));
+    if (btnPan) btnPan.addEventListener("click", () => setMode("pan"));
+
+    if (scroller) {
+      let scrollRaf = 0;
+      scroller.addEventListener("scroll", () => {
+        if (scrollRaf || monthlyMode !== "pan") return;
+        scrollRaf = requestAnimationFrame(() => {
+          scrollRaf = 0;
+          syncMinimapLens();
+        });
+      }, { passive: true });
+      if (window.ResizeObserver) {
+        new ResizeObserver(() => {
+          if (monthlyMode === "pan") syncMinimapLens();
+        }).observe(scroller);
+      }
+    }
+
+    if (viewport && scroller) {
+      const jumpToClientX = (clientX) => {
+        const rect = viewport.getBoundingClientRect();
+        if (!rect.width) return;
+        const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+        const targetCenter = ratio * scroller.scrollWidth;
+        scroller.scrollLeft = Math.max(0, targetCenter - scroller.clientWidth / 2);
+        syncMinimapLens();
+      };
+
+      let dragging = false;
+      viewport.addEventListener("pointerdown", (e) => {
+        dragging = true;
+        if (viewport.setPointerCapture) viewport.setPointerCapture(e.pointerId);
+        jumpToClientX(e.clientX);
+      });
+      viewport.addEventListener("pointermove", (e) => {
+        if (dragging) jumpToClientX(e.clientX);
+      });
+      const stopDrag = (e) => {
+        if (!dragging) return;
+        dragging = false;
+        if (viewport.releasePointerCapture && e.pointerId != null) {
+          try { viewport.releasePointerCapture(e.pointerId); } catch (_) {}
+        }
+      };
+      viewport.addEventListener("pointerup", stopDrag);
+      viewport.addEventListener("pointercancel", stopDrag);
+
+      viewport.addEventListener("keydown", (e) => {
+        const step = Math.max(60, scroller.clientWidth * 0.35);
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          scroller.scrollLeft = Math.max(0, scroller.scrollLeft - step);
+          syncMinimapLens();
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          scroller.scrollLeft = Math.min(scroller.scrollWidth, scroller.scrollLeft + step);
+          syncMinimapLens();
+        }
+      });
+    }
+  }
+
   async function init() {
     let payload = window.__PUBLIC_LEDGER__;
     if (!payload) {
@@ -668,6 +838,7 @@
 
     initScrollFadeFallback();
     initChartDeck();
+    initMonthlyModeAndMinimap();
     applyFilters();
   }
 

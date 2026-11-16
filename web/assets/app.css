@@ -152,6 +152,9 @@
     --chart-tooltip-ink: #fcfcfa;
     --color-thead-rule: rgba(255, 255, 255, 0.16);
     --color-backdrop: rgba(17, 19, 24, 0.72);
+    --minimap-shade: rgba(17, 19, 24, 0.12);
+    --minimap-lens-bg: rgba(27, 64, 121, 0.14);
+    --minimap-fill: rgba(27, 64, 121, 0.12);
 
     /* Typography & Scales */
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
@@ -215,6 +218,9 @@
       --chart-tick: #a2a8b6;
       --chart-tooltip-bg: #232834;
       --chart-tooltip-ink: #f2f1ec;
+      --minimap-shade: rgba(0, 0, 0, 0.35);
+      --minimap-lens-bg: rgba(130, 171, 248, 0.16);
+      --minimap-fill: rgba(130, 171, 248, 0.15);
     }
   }
 
@@ -935,6 +941,106 @@
     min-inline-size: var(--stage-min-width, 100%);
   }
 
+  /* Overview / Detail Toggle Switch */
+  .view-mode-switch {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.15rem;
+    gap: 0.15rem;
+    background-color: var(--color-well);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-radius: var(--radius-control);
+  }
+
+  .view-mode-switch[hidden] {
+    display: none;
+  }
+
+  .mode-btn {
+    padding-block: 0.28rem;
+    padding-inline: 0.68rem;
+    border: var(--rule-hair) solid transparent;
+    border-radius: var(--radius-sharp);
+    background-color: transparent;
+    color: var(--color-muted);
+    font-family: inherit;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .mode-btn:hover {
+    color: var(--color-ink);
+  }
+
+  .mode-btn[aria-pressed="true"] {
+    background-color: var(--color-sheet);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
+    font-weight: 700;
+  }
+
+  /* Interactive Full-Range Minimap (Overview + Detail) */
+  .minimap-wrap {
+    margin-block-start: 0.75rem;
+    padding-block-start: 0.65rem;
+    border-block-start: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .minimap-wrap[hidden] {
+    display: none;
+  }
+
+  .minimap-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-block-end: 0.35rem;
+    font-size: 0.75rem;
+  }
+
+  .minimap-title {
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .minimap-range {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-weight: 700;
+    color: var(--color-accent);
+  }
+
+  .minimap-viewport {
+    position: relative;
+    block-size: 52px;
+    inline-size: 100%;
+    background-color: var(--color-well);
+    border: var(--rule-hair) solid var(--color-rule-ui);
+    border-radius: var(--radius-control);
+    overflow: clip;
+    cursor: grab;
+    touch-action: pan-y;
+    user-select: none;
+  }
+
+  .minimap-viewport:active {
+    cursor: grabbing;
+  }
+
+  .minimap-lens {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: var(--lens-left, 0%);
+    inline-size: var(--lens-width, 100%);
+    background-color: var(--minimap-lens-bg);
+    border-inline: 2px solid var(--color-accent);
+    pointer-events: none;
+  }
+
   .scroll-pan-badge {
     display: inline-flex;
     align-items: center;
@@ -1486,7 +1592,9 @@
     }
 
     .site-header.is-wide .site-menu a[aria-current="page"],
-    .site-menu a[aria-current="page"] {
+    .site-menu a[aria-current="page"],
+    .mode-btn[aria-pressed="true"],
+    .minimap-lens {
       border-color: Highlight;
       outline: 1px solid Highlight;
     }

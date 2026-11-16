@@ -192,11 +192,24 @@ def build_index_page(meta):
       <section class="chart-card full">
         <div class="chart-head">
           <h3>월별 수입·지출 및 통장 잔액 추이</h3>
-          <span id="monthly-pan-hint" class="scroll-pan-badge" aria-live="polite">← 좌우로 밀어 월별 추이 탐색</span>
+          <div id="monthly-mode-switch" class="view-mode-switch" role="group" aria-label="추이 차트 보기 방식">
+            <button type="button" id="btn-mode-fit" class="mode-btn" aria-pressed="true">한눈에 보기</button>
+            <button type="button" id="btn-mode-pan" class="mode-btn" aria-pressed="false">확대 탐색</button>
+          </div>
         </div>
         <div id="readout-monthly" class="chart-readout" aria-live="polite">월을 누르거나 짚으면 수치가 여기에 표시됩니다</div>
-        <div id="monthly-scroll" class="chart-scroll-x" tabindex="0" role="region" aria-label="월별 수입·지출 및 통장 잔액 가로 스크롤 차트">
+        <div id="monthly-scroll" class="chart-scroll-x" tabindex="0" role="region" aria-label="월별 수입·지출 및 통장 잔액 차트">
           <div id="monthly-stage" class="chart-stage-wide"><canvas id="chart-monthly"></canvas></div>
+        </div>
+        <div id="monthly-minimap-wrap" class="minimap-wrap" hidden>
+          <div class="minimap-head">
+            <span class="minimap-title">전체 기간 잔액 흐름 (눌러서 시기 이동)</span>
+            <span id="minimap-range" class="minimap-range">-</span>
+          </div>
+          <div id="minimap-viewport" class="minimap-viewport" role="slider" tabindex="0" aria-label="전체 추세 미니맵 이동" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+            <canvas id="chart-monthly-minimap"></canvas>
+            <div id="minimap-lens" class="minimap-lens" aria-hidden="true"></div>
+          </div>
         </div>
       </section>
     </div>
