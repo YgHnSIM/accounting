@@ -868,6 +868,9 @@ def build_reports_archive_page(years, months, records):
         yr_r = [r for r in records if r["year"] == y]
         ys = summarize_period(yr_r)
         yr_end = month_info[y_months[0]]["end_bal"] if y_months else 0
+        max_flow = max(
+            [max(month_info[ym]["sum"]["inc"], month_info[ym]["sum"]["exp"]) for ym in y_months] or [1]
+        ) or 1
 
         year_chips.append(
             f"<button type='button' class='year-chip' data-filter-year='{y}' data-year-tone='{ytone}' aria-pressed='false'>"
@@ -879,6 +882,8 @@ def build_reports_archive_page(years, months, records):
             info = month_info[ym]
             ms = info["sum"]
             m_num = ym.split("-")[1]
+            inc_pct = round(ms["inc"] / max_flow * 100) if ms["inc"] else 0
+            exp_pct = round(ms["exp"] / max_flow * 100) if ms["exp"] else 0
 
             if info["top_mok"]:
                 m_name, m_amt = info["top_mok"]
@@ -894,9 +899,9 @@ def build_reports_archive_page(years, months, records):
                 f"<span class='month-num'>{m_num}월</span>"
                 f"<span class='month-tx-cnt'>{info['count']}건</span>"
                 f"</div>"
-                f"<div class='month-metrics'>"
-                f"<span>수입 <b>{fmt_man(ms['inc'])}</b></span>"
-                f"<span>지출 <b>{fmt_man(ms['exp'])}</b></span>"
+                f"<div class='month-bars'>"
+                f"<div class='month-bar-row'><span class='month-bar-label'>수입</span><div class='month-bar-track'><div class='month-bar-fill inc' style='--bar-pct: {inc_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['inc'])}</span></div>"
+                f"<div class='month-bar-row'><span class='month-bar-label'>지출</span><div class='month-bar-track'><div class='month-bar-fill exp' style='--bar-pct: {exp_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['exp'])}</span></div>"
                 f"</div>"
                 f"<div class='month-highlight'>{hi_html}</div>"
                 f"<div class='month-card-foot'>"

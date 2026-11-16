@@ -1580,19 +1580,49 @@
     font-variant-numeric: tabular-nums;
   }
 
-  .month-metrics {
-    display: flex;
-    justify-content: space-between;
-    align-items: baseline;
-    flex-wrap: wrap;
-    gap: 0.35rem 0.75rem;
-    font-size: 0.8rem;
-    font-variant-numeric: tabular-nums;
-    color: var(--color-ink-2);
+  .month-bars {
+    display: grid;
+    gap: 0.25rem;
   }
 
-  .month-metrics b {
-    color: var(--color-ink);
+  .month-bar-row {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .month-bar-label {
+    color: var(--color-muted);
+    font-weight: 600;
+  }
+
+  .month-bar-track {
+    block-size: 6px;
+    background-color: var(--color-well);
+    border-radius: var(--radius-sharp);
+    overflow: clip;
+  }
+
+  .month-bar-fill {
+    block-size: 100%;
+    inline-size: var(--bar-pct, 0%);
+    background-color: var(--bar-color, var(--color-accent));
+  }
+
+  .month-bar-fill.inc {
+    --bar-color: var(--color-income);
+  }
+
+  .month-bar-fill.exp {
+    --bar-color: var(--color-expense);
+  }
+
+  .month-bar-amt {
+    color: var(--color-ink-2);
+    font-weight: 600;
   }
 
   .month-highlight {
