@@ -256,7 +256,7 @@ def build_monthly_report(records, target_ym: str, units_cfg):
     end_bal = prior_bal + curr_sum["op"] + curr_sum["net"]
 
     idx_ym = all_yms.index(target_ym)
-    recent_yms = all_yms[max(0, idx_ym - 5):idx_ym + 1]
+    recent_yms = all_yms[max(0, idx_ym - 2):idx_ym + 1]
 
     # Prev month comparison
     prev_ym = all_yms[idx_ym - 1] if idx_ym > 0 else None
@@ -272,7 +272,7 @@ def build_monthly_report(records, target_ym: str, units_cfg):
         act_agg[k][1] += r["inc"]
         act_agg[k][2] += r["exp"]
 
-    # Build recent 6 months table
+    # Build recent 3 months table
     recent_rows_html = []
     run_b = sum(r["inc"] - r["exp"] for r in records if r["ym"] < recent_yms[0])
     for ym in recent_yms:
@@ -375,7 +375,7 @@ def build_monthly_report(records, target_ym: str, units_cfg):
     <div class="kpi"><div class="label">당월 기말잔액</div><div class="value">{fmt_won(end_bal)}원</div><div class="sub">{prev_txt}</div></div>
   </div>
 
-  <h2 id="sec-trend">1. 최근 6개월 수지 추이 요약</h2>
+  <h2 id="sec-trend">1. 최근 3개월 수지 추이 요약</h2>
   <div tabindex="0" role="region" aria-labelledby="sec-trend" class="table-wrapper">
     <table>
       <thead><tr><th>보고월</th><th>기초잔액</th><th>외부 순수입</th><th>외부 순지출</th><th>내부이전(순)</th><th>이월차액</th><th>기말잔액</th></tr></thead>

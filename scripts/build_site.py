@@ -530,7 +530,7 @@ def build_public_monthly_html(records, target_ym: str):
     cs = summarize_period(curr)
     end_bal = prior_bal + cs["op"] + cs["net"]
     idx_ym = all_yms.index(target_ym)
-    recent_yms = all_yms[max(0, idx_ym - 5):idx_ym + 1]
+    recent_yms = all_yms[max(0, idx_ym - 2):idx_ym + 1]
 
     recent_rows = []
     run_b = sum(r["inc"] - r["exp"] for r in records if r["ym"] < recent_yms[0])
@@ -610,12 +610,12 @@ def build_public_monthly_html(records, target_ym: str):
 
   <section class="section-band" aria-labelledby="sec-r">
     <div class="section-head">
-      <h2 id="sec-r">1. 최근 6개월 수지 추이</h2>
-      <span class="section-sub">당월 포함 최근 6개월 월간 잔액 흐름</span>
+      <h2 id="sec-r">1. 최근 3개월 수지 추이</h2>
+      <span class="section-sub">당월 포함 최근 3개월 월간 잔액 흐름</span>
     </div>
     <div tabindex="0" role="region" aria-labelledby="sec-r" class="table-wrapper">
       <table>
-        <caption class="visually-hidden">최근 6개월 수지 추이표</caption>
+        <caption class="visually-hidden">최근 3개월 수지 추이표</caption>
         <thead><tr><th scope="col">보고월</th><th scope="col">기초잔액</th><th scope="col">조합 수입</th><th scope="col">사업 지출</th><th scope="col">지부 교부·정산</th><th scope="col">이월 조정</th><th scope="col">기말잔액</th></tr></thead>
         <tbody>{''.join(recent_rows)}</tbody>
       </table>
