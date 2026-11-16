@@ -1,12 +1,38 @@
 (function () {
-  const PALETTE = ["#1F4E78", "#2E75B6", "#4472C4", "#548235", "#BF9000", "#C55A11", "#843C0C", "#7030A0", "#0D9488", "#64748B"];
   const fmt = (n) => Number(n || 0).toLocaleString("ko-KR");
-  const fmtMan = (n) => (Number(n || 0) / 10000).toLocaleString("ko-KR", { maximumFractionDigits: 1 }) + "만원";
 
   let ALL_RECORDS = [];
   let META = {};
   const charts = {};
   let drillState = { gwan: null, hang: null };
+
+  function readChartTheme() {
+    const cs = getComputedStyle(document.documentElement);
+    const tok = (name, fallback) => cs.getPropertyValue(name).trim() || fallback;
+    return {
+      palette: [
+        tok("--chart-cobalt", "#1b4079"),
+        tok("--chart-blue", "#2d63a8"),
+        tok("--chart-income", "#1c6b4e"),
+        tok("--chart-expense", "#b3461d"),
+        tok("--chart-grant", "#9e6b08"),
+        tok("--chart-teal", "#177278"),
+        tok("--chart-plum", "#6b468c"),
+        tok("--chart-slate", "#5c6473"),
+      ],
+      cobalt: tok("--chart-cobalt", "#1b4079"),
+      blue: tok("--chart-blue", "#2d63a8"),
+      income: tok("--chart-income", "#1c6b4e"),
+      expense: tok("--chart-expense", "#b3461d"),
+      grant: tok("--chart-grant", "#9e6b08"),
+      grid: tok("--chart-grid", "rgba(118, 116, 108, 0.22)"),
+      tick: tok("--chart-tick", "#4a505e"),
+      tooltipBg: tok("--chart-tooltip-bg", "#16181d"),
+      tooltipInk: tok("--chart-tooltip-ink", "#fcfcfa"),
+      sheet: tok("--color-sheet", "#fcfcfa"),
+      font: tok("--font-sans", "system-ui, sans-serif"),
+    };
+  }
 
   function escapeHtml(s) {
     return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -40,13 +66,27 @@
     };
   }
 
+  function baseScaleOpts(t) {
+    return {
+      grid: { color: t.grid },
+      ticks: { color: t.tick, font: { family: t.font, size: 11 } },
+      border: { color: t.grid },
+    };
+  }
+
+  function basePluginOpts(t) {
+    return {
+      legend: { labels: { color: t.tick, font: { family: t.font, size: 11 }, boxWidth: 12 } },
+      tooltip: { backgroundColor: t.tooltipBg, titleColor: t.tooltipInk, bodyColor: t.tooltipInk, padding: 10, cornerRadius: 4 },
+    };
+  }
+
   function applyFilters() {
     const f = getFilters();
     const matchUnitFund = (r) => (f.unit === "전체" || r.unit === f.unit) && (f.fund === "전체" || r.fund === f.fund);
     const scoped = ALL_RECORDS.filter(matchUnitFund);
     const filtered = f.year === "전체" ? scoped : scoped.filter((r) => String(r.year) === f.year);
 
-    // Opening balance prior to selected year (only meaningful when fund=전체)
     let priorBal = 0;
     if (f.year !== "전체") {
       const yNum = Number(f.year);
@@ -66,15 +106,16 @@
     document.getElementById("kpi-end").textContent = fmt(endBal) + "원";
     document.getElementById("kpi-end-sub").textContent = `이월 조정 ${sum.adj >= 0 ? "+" : ""}${fmt(sum.adj)} · ${filtered.length}건`;
 
-    renderMonthlyChart(filtered, opBal);
-    renderDrillChart(filtered);
-    renderTopMokChart(filtered);
-    renderExpTypeChart(filtered);
-    renderDuesGrantChart(filtered);
+    const theme = readChartTheme();
+    renderMonthlyChart(filtered, opBal, theme);
+    renderDrillChart(filtered, theme);
+    renderTopMokChart(filtered, theme);
+    renderExpTypeChart(filtered, theme);
+    renderDuesGrantChart(filtered, theme);
     renderSummaryTable(filtered, sum.exp || 1);
   }
 
-  function renderMonthlyChart(filtered, opBal) {
+  function renderMonthlyChart(filtered, opBal, t) {
     destroyChart("monthly");
     const yms = [...new Set(filtered.map((r) => r.ym).filter(Boolean))].sort();
     let run = opBal;
@@ -92,9 +133,9 @@
       data: {
         labels: yms,
         datasets: [
-          { type: "bar", label: "조합 수입", data: incs, backgroundColor: "rgba(46, 117, 182, 0.85)", yAxisID: "y" },
-          { type: "bar", label: "사업 지출", data: exps, backgroundColor: "rgba(197, 90, 17, 0.85)", yAxisID: "y" },
-          { type: "line", label: "기말 잔액", data: bals, borderColor: "#1F4E78", backgroundColor: "#1F4E78", tension: 0.2, pointRadius: 3, yAxisID: "y1" },
+          { type: "bar", label: "조합 수입", data: incs, backgroundColor: t.income, borderRadius: 2, yAxisID: "y" },
+          { type: "bar", label: "사업 지출", data: exps, backgroundColor: t.expense, borderRadius: 2, yAxisID: "y" },
+          { type: "line", label: "기말 잔액", data: bals, borderColor: t.cobalt, backgroundColor: t.cobalt, tension: 0.18, pointRadius: 2.5, borderWidth: 2, yAxisID: "y1" },
         ],
       },
       options: {
@@ -102,11 +143,13 @@
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         scales: {
-          y: { beginAtZero: true, ticks: { callback: (v) => fmt(v / 10000) + "만" } },
-          y1: { position: "right", grid: { drawOnChartArea: false }, ticks: { callback: (v) => fmt(v / 10000) + "만" } },
+          x: { ...baseScaleOpts(t), grid: { display: false } },
+          y: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          y1: { ...baseScaleOpts(t), position: "right", grid: { drawOnChartArea: false }, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
         },
         plugins: {
-          tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } },
+          ...basePluginOpts(t),
+          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } },
         },
       },
     });
@@ -116,10 +159,10 @@
     const bar = document.getElementById("drill-breadcrumbs");
     const parts = [`<button type="button" class="btn small ${!drillState.gwan ? "" : "secondary"}" data-level="root">전체 대분류</button>`];
     if (drillState.gwan) {
-      parts.push(`<span>&rsaquo;</span><button type="button" class="btn small ${!drillState.hang ? "" : "secondary"}" data-level="gwan">${escapeHtml(drillState.gwan)}</button>`);
+      parts.push(`<span aria-hidden="true">&rsaquo;</span><button type="button" class="btn small ${!drillState.hang ? "" : "secondary"}" data-level="gwan">${escapeHtml(drillState.gwan)}</button>`);
     }
     if (drillState.hang) {
-      parts.push(`<span>&rsaquo;</span><span class="status-pill">${escapeHtml(drillState.hang)}</span>`);
+      parts.push(`<span aria-hidden="true">&rsaquo;</span><span class="crumb-active">${escapeHtml(drillState.hang)}</span>`);
     }
     bar.innerHTML = parts.join("");
     bar.querySelectorAll("button").forEach((b) => {
@@ -131,7 +174,7 @@
     });
   }
 
-  function renderDrillChart(filtered) {
+  function renderDrillChart(filtered, t) {
     destroyChart("drill");
     updateDrillBreadcrumbs();
     const expRows = filtered.filter((r) => r.gubun === "지출");
@@ -158,7 +201,7 @@
       type: "bar",
       data: {
         labels: items.map((x) => x[0]),
-        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: PALETTE.slice(0, items.length) }],
+        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: items.map((_, i) => t.palette[i % t.palette.length]), borderRadius: 2 }],
       },
       options: {
         indexAxis: "y",
@@ -169,22 +212,26 @@
           const label = items[elements[0].index][0];
           if (field === "gwan") {
             drillState = { gwan: label, hang: null };
-            renderDrillChart(filtered);
+            renderDrillChart(filtered, readChartTheme());
           } else if (field === "hang") {
             drillState = { gwan: drillState.gwan, hang: label };
-            renderDrillChart(filtered);
+            renderDrillChart(filtered, readChartTheme());
           }
         },
-        scales: { x: { beginAtZero: true, ticks: { callback: (v) => fmt(v / 10000) + "만" } } },
+        scales: {
+          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          y: { ...baseScaleOpts(t), grid: { display: false } },
+        },
         plugins: {
+          ...basePluginOpts(t),
           legend: { display: false },
-          tooltip: { callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } },
+          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } },
         },
       },
     });
   }
 
-  function renderTopMokChart(filtered) {
+  function renderTopMokChart(filtered, t) {
     destroyChart("topMok");
     const agg = new Map();
     for (const r of filtered) {
@@ -195,19 +242,26 @@
       type: "bar",
       data: {
         labels: items.map((x) => x[0]),
-        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: "#2E75B6" }],
+        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: t.blue, borderRadius: 2 }],
       },
       options: {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
-        scales: { x: { beginAtZero: true, ticks: { callback: (v) => fmt(v / 10000) + "만" } } },
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } } },
+        scales: {
+          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+          y: { ...baseScaleOpts(t), grid: { display: false } },
+        },
+        plugins: {
+          ...basePluginOpts(t),
+          legend: { display: false },
+          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${fmt(c.parsed.x)}원` } },
+        },
       },
     });
   }
 
-  function renderExpTypeChart(filtered) {
+  function renderExpTypeChart(filtered, t) {
     destroyChart("expType");
     const agg = new Map();
     for (const r of filtered) {
@@ -218,20 +272,25 @@
       type: "doughnut",
       data: {
         labels: items.map((x) => x[0]),
-        datasets: [{ data: items.map((x) => x[1]), backgroundColor: PALETTE.slice(0, items.length) }],
+        datasets: [{
+          data: items.map((x) => x[1]),
+          backgroundColor: items.map((_, i) => t.palette[i % t.palette.length]),
+          borderColor: t.sheet,
+          borderWidth: 2,
+        }],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { position: "right", labels: { boxWidth: 12, font: { size: 11 } } },
-          tooltip: { callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}원` } },
+          legend: { position: "right", labels: { color: t.tick, boxWidth: 12, font: { family: t.font, size: 11 } } },
+          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.label}: ${fmt(c.parsed)}원` } },
         },
       },
     });
   }
 
-  function renderDuesGrantChart(filtered) {
+  function renderDuesGrantChart(filtered, t) {
     destroyChart("duesGrant");
     const f = getFilters();
     const useYears = f.year === "전체";
@@ -247,15 +306,21 @@
       data: {
         labels: keys,
         datasets: [
-          { label: "정기조합비 수입", data: dues, backgroundColor: "#1F4E78" },
-          { label: "지부 교부금", data: grants, backgroundColor: "#BF9000" },
+          { label: "정기조합비 수입", data: dues, backgroundColor: t.cobalt, borderRadius: 2 },
+          { label: "지부 교부금", data: grants, backgroundColor: t.grant, borderRadius: 2 },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true, ticks: { callback: (v) => fmt(v / 10000) + "만" } } },
-        plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } } },
+        scales: {
+          x: { ...baseScaleOpts(t), grid: { display: false } },
+          y: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, callback: (v) => fmt(v / 10000) + "만" } },
+        },
+        plugins: {
+          ...basePluginOpts(t),
+          tooltip: { ...basePluginOpts(t).tooltip, callbacks: { label: (c) => `${c.dataset.label}: ${fmt(c.parsed.y)}원` } },
+        },
       },
     });
   }
@@ -293,7 +358,7 @@
     ALL_RECORDS = payload.records || [];
     META = payload.meta || {};
     if (META.syncedAt) {
-      document.getElementById("sync-badge").textContent = `데이터 기준: ${META.monthsRange[0]} ~ ${META.monthsRange[1]} (${META.totalRecords}건)`;
+      document.getElementById("sync-badge").textContent = `기준: ${META.monthsRange[0]} ~ ${META.monthsRange[1]} (${META.totalRecords}건)`;
     }
 
     const years = [...new Set(ALL_RECORDS.map((r) => r.year).filter(Boolean))].sort();
@@ -318,6 +383,10 @@
       drillState = { gwan: null, hang: null };
       applyFilters();
     });
+
+    if (window.matchMedia) {
+      window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyFilters);
+    }
 
     applyFilters();
   }
