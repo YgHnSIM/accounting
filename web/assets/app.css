@@ -36,74 +36,74 @@
   :root {
     color-scheme: light;
 
-    /* Option A: Delft Cobalt & Union Logo Periwinkle (#516DB2 + #0B051A) */
-    --stone-canvas-light: #f6f8fc;
+    /* Option B: Klein Blue (IKB #002FA7 · workplace unified) + Union Logo (#516DB2 + #0B051A) */
+    --stone-canvas-light: #f7f8fa;
     --stone-sheet-light: #ffffff;
-    --stone-well-light: #edf1fa;
-    --stone-hover-light: #e2e8f5;
+    --stone-well-light: #eef2fc;
+    --stone-hover-light: #e1e8fa;
     --ink-strong-light: #0b051a;
-    --ink-body-light: #1f2437;
-    --ink-muted-light: #4e5366;
-    --rule-hair-light: #d4d9e6;
-    --rule-ui-light: #6e768e;
+    --ink-body-light: #1d2130;
+    --ink-muted-light: #4d5160;
+    --rule-hair-light: #d1d5e0;
+    --rule-ui-light: #687086;
     --rule-bar-light: #0b051a;
     --header-bg-light: rgba(255, 255, 255, 0.94);
     --thead-bg-light: #0b051a;
     --thead-ink-light: #ffffff;
 
-    --stone-canvas-dark: #0d101b;
-    --stone-sheet-dark: #141929;
-    --stone-well-dark: #1c2338;
-    --stone-hover-dark: #252e4a;
-    --ink-strong-dark: #f4f6fb;
-    --ink-body-dark: #d5dcef;
-    --ink-muted-dark: #9ca6c4;
-    --rule-hair-dark: #2b3452;
-    --rule-ui-dark: #7e89ab;
-    --rule-bar-dark: #dce2f2;
-    --header-bg-dark: rgba(20, 25, 41, 0.94);
-    --thead-bg-dark: #1f2740;
-    --thead-ink-dark: #f4f6fb;
+    --stone-canvas-dark: #0b0e17;
+    --stone-sheet-dark: #121726;
+    --stone-well-dark: #192138;
+    --stone-hover-dark: #222c4a;
+    --ink-strong-dark: #f5f7fc;
+    --ink-body-dark: #d6def0;
+    --ink-muted-dark: #9ba5c4;
+    --rule-hair-dark: #293350;
+    --rule-ui-dark: #7b86a8;
+    --rule-bar-dark: #dce2f5;
+    --header-bg-dark: rgba(18, 23, 38, 0.94);
+    --thead-bg-dark: #1b243e;
+    --thead-ink-dark: #f5f7fc;
 
     /* Brand & Civic Signals (Light / Dark paired for >= 4.5:1 contrast) */
     --sig-logo-light: #516db2;
     --sig-logo-dark: #7994de;
 
-    --sig-cobalt-light: #334f99;
+    --sig-cobalt-light: #002fa7;
     --sig-cobalt-ink-light: #ffffff;
-    --sig-cobalt-soft-light: #edf1fa;
-    --sig-cobalt-soft-ink-light: #243973;
+    --sig-cobalt-soft-light: #eef2fc;
+    --sig-cobalt-soft-ink-light: #00237d;
 
-    --sig-cobalt-dark: #8fa8ec;
-    --sig-cobalt-ink-dark: #0b1020;
-    --sig-cobalt-soft-dark: #1d2847;
-    --sig-cobalt-soft-ink-dark: #d0ddfb;
+    --sig-cobalt-dark: #7fa2ff;
+    --sig-cobalt-ink-dark: #07112b;
+    --sig-cobalt-soft-dark: #17254d;
+    --sig-cobalt-soft-ink-dark: #d2e0ff;
 
-    --sig-income-light: #16654e;
-    --sig-income-soft-light: #e6f3ee;
-    --sig-income-dark: #5cd0a6;
-    --sig-income-soft-dark: #132e27;
+    --sig-income-light: #146c53;
+    --sig-income-soft-light: #e5f4ef;
+    --sig-income-dark: #54d1a9;
+    --sig-income-soft-dark: #122e26;
 
-    --sig-expense-light: #b4431e;
-    --sig-expense-soft-light: #fbede8;
-    --sig-expense-dark: #f49774;
-    --sig-expense-soft-dark: #331e18;
+    --sig-expense-light: #c24127;
+    --sig-expense-soft-light: #fcece8;
+    --sig-expense-dark: #f7907a;
+    --sig-expense-soft-dark: #341d18;
 
-    --sig-grant-light: #8d5800;
-    --sig-grant-soft-light: #faf2e1;
-    --sig-grant-dark: #edc164;
-    --sig-grant-soft-dark: #2f2614;
+    --sig-grant-light: #8c5a00;
+    --sig-grant-soft-light: #faf2df;
+    --sig-grant-dark: #f0c265;
+    --sig-grant-soft-dark: #2f2513;
 
-    --sig-adj-bg-light: #f6f2ea;
-    --sig-adj-bg-dark: #23211b;
-    --sig-subtot-bg-light: #edf1fa;
-    --sig-subtot-bg-dark: #1f2740;
-    --sig-tot-bg-light: #dfe6f5;
-    --sig-tot-bg-dark: #293352;
+    --sig-adj-bg-light: #f7f2e7;
+    --sig-adj-bg-dark: #232019;
+    --sig-subtot-bg-light: #eef2fc;
+    --sig-subtot-bg-dark: #1b243e;
+    --sig-tot-bg-light: #dce4f9;
+    --sig-tot-bg-dark: #243052;
 
-    --scroll-track-light: #edf1fa;
-    --scroll-thumb-light: #6e768e;
-    --scroll-track-dark: #141929;
+    --scroll-track-light: #eef2fc;
+    --scroll-thumb-light: #687086;
+    --scroll-track-dark: #121726;
     --scroll-thumb-dark: #5b6588;
 
     /* Semantic Defaults (Light Default) */
@@ -145,22 +145,22 @@
 
     /* Chart visualization tokens (consumed by dashboard.js) */
     --chart-cobalt: #516db2;
-    --chart-blue: #334f99;
-    --chart-income: #16654e;
-    --chart-expense: #b4431e;
-    --chart-grant: #8d5800;
-    --chart-slate: #4e5366;
-    --chart-teal: #177278;
-    --chart-plum: #6b468c;
-    --chart-grid: rgba(110, 118, 142, 0.2);
-    --chart-tick: #4e5366;
+    --chart-blue: #002fa7;
+    --chart-income: #146c53;
+    --chart-expense: #c24127;
+    --chart-grant: #8c5a00;
+    --chart-slate: #4d5160;
+    --chart-teal: #0f767c;
+    --chart-plum: #5b3d99;
+    --chart-grid: rgba(104, 112, 134, 0.2);
+    --chart-tick: #4d5160;
     --chart-tooltip-bg: #0b051a;
     --chart-tooltip-ink: #ffffff;
     --color-thead-rule: rgba(255, 255, 255, 0.16);
     --color-backdrop: rgba(11, 5, 26, 0.68);
     --minimap-shade: rgba(11, 5, 26, 0.12);
-    --minimap-lens-bg: rgba(81, 109, 178, 0.16);
-    --minimap-fill: rgba(81, 109, 178, 0.14);
+    --minimap-lens-bg: rgba(0, 47, 167, 0.14);
+    --minimap-fill: rgba(81, 109, 178, 0.16);
 
     /* Typography & Scales */
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
@@ -216,20 +216,20 @@
     --color-scrollbar-thumb: var(--scroll-thumb-dark);
 
     --chart-cobalt: #7994de;
-    --chart-blue: #8fa8ec;
-    --chart-income: #5cd0a6;
-    --chart-expense: #f49774;
-    --chart-grant: #edc164;
-    --chart-slate: #9ca6c4;
-    --chart-teal: #58c4ca;
-    --chart-plum: #ba96e0;
-    --chart-grid: rgba(156, 166, 196, 0.16);
-    --chart-tick: #9ca6c4;
-    --chart-tooltip-bg: #1f2740;
-    --chart-tooltip-ink: #f4f6fb;
+    --chart-blue: #7fa2ff;
+    --chart-income: #54d1a9;
+    --chart-expense: #f7907a;
+    --chart-grant: #f0c265;
+    --chart-slate: #9ba5c4;
+    --chart-teal: #55c5cb;
+    --chart-plum: #b79bf2;
+    --chart-grid: rgba(155, 165, 196, 0.16);
+    --chart-tick: #9ba5c4;
+    --chart-tooltip-bg: #1b243e;
+    --chart-tooltip-ink: #f5f7fc;
     --minimap-shade: rgba(0, 0, 0, 0.35);
-    --minimap-lens-bg: rgba(143, 168, 236, 0.16);
-    --minimap-fill: rgba(143, 168, 236, 0.15);
+    --minimap-lens-bg: rgba(127, 162, 255, 0.16);
+    --minimap-fill: rgba(127, 162, 255, 0.15);
   }
 
   @supports (color: light-dark(white, black)) {

@@ -22,12 +22,12 @@ plt.rcParams["font.family"] = ["NanumGothic", "Malgun Gothic", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 plt.rcParams["axes.facecolor"] = "#ffffff"
 plt.rcParams["figure.facecolor"] = "#ffffff"
-plt.rcParams["axes.edgecolor"] = "#d4d9e6"
-plt.rcParams["axes.labelcolor"] = "#1f2437"
-plt.rcParams["xtick.color"] = "#4e5366"
-plt.rcParams["ytick.color"] = "#4e5366"
+plt.rcParams["axes.edgecolor"] = "#d1d5e0"
+plt.rcParams["axes.labelcolor"] = "#1d2130"
+plt.rcParams["xtick.color"] = "#4d5160"
+plt.rcParams["ytick.color"] = "#4d5160"
 plt.rcParams["text.color"] = "#0b051a"
-PALETTE = ["#516db2", "#334f99", "#16654e", "#b4431e", "#8d5800", "#177278", "#6b468c", "#4e5366"]
+PALETTE = ["#516db2", "#002fa7", "#146c53", "#c24127", "#8c5a00", "#0f767c", "#5b3d99", "#4d5160"]
 
 
 def year_tone(year: int) -> str:
@@ -461,13 +461,13 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax1 = plt.subplots(figsize=(10, 4.4), dpi=180)
     x = list(range(len(months)))
     w = 0.36
-    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#16654e")
-    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#b4431e")
+    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#146c53")
+    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#c24127")
     ax1.set_ylabel("월간 수지 (만원)")
     ax1.set_ylim(0, max(m_inc + m_exp + [10]) * 1.15)
     ax1.set_xticks(x)
     ax1.set_xticklabels([m[5:] + "월" for m in months])
-    ax1.grid(axis="y", linestyle="--", color="#d4d9e6", alpha=0.8)
+    ax1.grid(axis="y", linestyle="--", color="#d1d5e0", alpha=0.8)
     ax1.spines["top"].set_visible(False)
     ax2 = ax1.twinx()
     ax2.plot(x, m_end, color="#516db2", marker="o", linewidth=2.2, label="기말 통장잔액")
@@ -475,7 +475,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     ax2.set_ylim(0, max(m_end + [10]) * 1.18)
     ax2.spines["top"].set_visible(False)
     for i, v in enumerate(m_end):
-        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#334f99")
+        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#002fa7")
     l1, lb1 = ax1.get_legend_handles_labels()
     l2, lb2 = ax2.get_legend_handles_labels()
     ax1.legend(l1 + l2, lb1 + lb2, loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=3, frameon=False)
@@ -502,7 +502,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 대분류별 사업 지출 비중", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
+    ax.grid(axis="x", linestyle="--", color="#d1d5e0", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
@@ -526,7 +526,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     ax.set_xlim(0, max(vals) * 1.25 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 주요 세부활동별 지출 TOP 10", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
+    ax.grid(axis="x", linestyle="--", color="#d1d5e0", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
@@ -544,13 +544,13 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax = plt.subplots(figsize=(6.4, 4.1), dpi=180)
     labels = [k for k, _ in reversed(et_items)]
     vals = [v / 10000.0 for _, v in reversed(et_items)]
-    bars = ax.barh(labels, vals, color="#334f99")
+    bars = ax.barh(labels, vals, color="#002fa7")
     for bar, v in zip(bars, vals):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원 ({v*10000/tot_exp*100:.1f}%)", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 지출방식별 집행 현황", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
+    ax.grid(axis="x", linestyle="--", color="#d1d5e0", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
