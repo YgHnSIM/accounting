@@ -28,12 +28,24 @@ plt.rcParams["xtick.color"] = "#4a505e"
 plt.rcParams["ytick.color"] = "#4a505e"
 plt.rcParams["text.color"] = "#16181d"
 PALETTE = ["#1b4079", "#2d63a8", "#1c6b4e", "#b3461d", "#9e6b08", "#177278", "#6b468c", "#5c6473"]
+YEAR_TONES = {2: "cobalt", 1: "pine", 0: "ochre", 3: "plum"}
+
+
+def year_tone(year: int) -> str:
+    return YEAR_TONES[int(year) % 4]
 
 
 def fmt_won(v):
     if v is None or v == "":
         return "-"
     return f"{int(round(v)):,}"
+
+
+def fmt_man(v):
+    man = v / 10000.0
+    if abs(man) >= 100 or abs(man - round(man)) < 0.05:
+        return f"{man:,.0f}만"
+    return f"{man:,.1f}만"
 
 
 def summarize_period(recs):
@@ -586,15 +598,16 @@ def build_public_monthly_html(records, target_ym: str):
   </nav>"""
 
     y_n, m_n = target_ym.split("-")
+    ytone = year_tone(int(y_n))
     title = f"{y_n}년 {int(m_n)}월 운영위원회 재정보고"
     body = f"""
-  <header class="page-masthead">
+  <header class="page-masthead" data-year-tone="{ytone}">
     <div>
       <h1>{title}</h1>
       <p class="lead">공개 웹 보고서(개인 실명 비식별 처리)</p>
     </div>
     <div class="masthead-meta">
-      <span class="data-stamp">기준월: {target_ym}</span>
+      <span class="data-stamp">{y_n}년 · {target_ym}</span>
     </div>
   </header>
 
@@ -703,9 +716,10 @@ def build_public_annual_html(records, target_year: int, coa_cfg, charts_dir: Pat
     {next_btn}
   </nav>"""
 
+    ytone = year_tone(target_year)
     title = f"{target_year}년 대의원대회 결산 보고서"
     body = f"""
-  <header class="page-masthead">
+  <header class="page-masthead" data-year-tone="{ytone}">
     <div>
       <h1>{title}</h1>
       <p class="lead">활동별 연간 결산 및 시각화</p>
@@ -818,28 +832,113 @@ def build_reports_archive_page(years, months, records):
     for y in sorted(years, reverse=True):
         yr_r = [r for r in records if r["year"] == y]
         s = summarize_period(yr_r)
+        ytone = year_tone(y)
         lbl = f"{y}년 대의원대회 결산" + (" (1~9월)" if y == 2026 else "")
         ann_cards.append(
-            f"<article class='report-entry'><div><h3>{lbl}</h3>"
+            f"<article class='report-entry' data-year-tone='{ytone}'><div><h3>{lbl}</h3>"
             f"<p class='meta-figures'>조합 수입 {fmt_won(s['inc'])}원 / 사업 지출 {fmt_won(s['exp'])}원 / 교부금 {fmt_won(s['tr_out'])}원</p></div>"
             f"<a class='btn small entry-link' href='annual/{y}.html'>{y}년 결산 열기</a></article>"
         )
 
-    mon_cards = []
-    for ym in sorted(months, reverse=True):
+    # Precompute chronological monthly balances and top expense activity
+    month_info = {}
+    running_bal = 0
+    for ym in sorted(months):
         mr = [r for r in records if r["ym"] == ym]
         ms = summarize_period(mr)
-        mon_cards.append(
-            f"<article class='report-entry'><div><h3>{ym} 운영위 재정보고</h3>"
-            f"<p class='meta-figures'>{len(mr)}건 / 수입 {fmt_won(ms['inc'])}원 / 지출 {fmt_won(ms['exp'])}원</p></div>"
-            f"<a class='btn secondary small entry-link' href='monthly/{ym}.html'>{ym} 보고서 열기</a></article>"
+        running_bal += ms["op"] + ms["net"]
+        exp_by_mok = defaultdict(int)
+        for r in mr:
+            if r["gubun"] == "지출":
+                exp_by_mok[r["mok"]] += r["exp"]
+        top_mok = max(exp_by_mok.items(), key=lambda kv: kv[1]) if exp_by_mok else None
+        month_info[ym] = {
+            "sum": ms,
+            "count": len(mr),
+            "end_bal": running_bal,
+            "top_mok": top_mok,
+        }
+
+    year_chips = [
+        f"<button type='button' class='year-chip' data-filter-year='all' aria-pressed='true'>전체 ({len(months)}개월)</button>"
+    ]
+    year_sections = []
+    for y in sorted(years, reverse=True):
+        ytone = year_tone(y)
+        y_months = sorted([ym for ym in months if ym.startswith(f"{y}-")], reverse=True)
+        yr_r = [r for r in records if r["year"] == y]
+        ys = summarize_period(yr_r)
+        yr_end = month_info[y_months[0]]["end_bal"] if y_months else 0
+        max_flow = max(
+            [max(month_info[ym]["sum"]["inc"], month_info[ym]["sum"]["exp"]) for ym in y_months] or [1]
+        ) or 1
+
+        year_chips.append(
+            f"<button type='button' class='year-chip' data-filter-year='{y}' data-year-tone='{ytone}' aria-pressed='false'>"
+            f"<span class='year-chip-swatch' aria-hidden='true'></span><span>{y}년 ({len(y_months)})</span></button>"
+        )
+
+        month_cards = []
+        for ym in y_months:
+            info = month_info[ym]
+            ms = info["sum"]
+            m_num = ym.split("-")[1]
+            # Operating surplus/deficit including branch transfers (excluding initial carryover)
+            net_flow = ms["net"] - ms["adj"]
+            if net_flow > 0:
+                net_cls, net_txt = "surplus", f"+{fmt_man(net_flow)} 흑자"
+            elif net_flow < 0:
+                net_cls, net_txt = "deficit", f"{fmt_man(net_flow)} 적자"
+            else:
+                net_cls, net_txt = "even", "수지 보합"
+
+            inc_pct = round(ms["inc"] / max_flow * 100) if ms["inc"] else 0
+            exp_pct = round(ms["exp"] / max_flow * 100) if ms["exp"] else 0
+
+            if info["top_mok"]:
+                m_name, m_amt = info["top_mok"]
+                hi_html = f"최대 지출: <strong>{html.escape(m_name)}</strong> ({fmt_man(m_amt)})"
+            elif ms["tr_out"]:
+                hi_html = f"지부 교부금 집행 ({fmt_man(ms['tr_out'])})"
+            else:
+                hi_html = "조합비 수납 중심 (사업 지출 없음)"
+
+            month_cards.append(
+                f"<article class='month-card'>"
+                f"<div class='month-card-top'>"
+                f"<div class='month-num-wrap'><span class='month-num'>{m_num}월</span><span class='month-tx-cnt'>{info['count']}건</span></div>"
+                f"<span class='net-badge' data-net='{net_cls}'>{net_txt}</span>"
+                f"</div>"
+                f"<div class='month-bars'>"
+                f"<div class='month-bar-row'><span class='month-bar-label'>수입</span><div class='month-bar-track'><div class='month-bar-fill inc' style='--bar-pct: {inc_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['inc'])}</span></div>"
+                f"<div class='month-bar-row'><span class='month-bar-label'>지출</span><div class='month-bar-track'><div class='month-bar-fill exp' style='--bar-pct: {exp_pct}%'></div></div><span class='month-bar-amt'>{fmt_man(ms['exp'])}</span></div>"
+                f"</div>"
+                f"<div class='month-highlight'>{hi_html}</div>"
+                f"<div class='month-card-foot'>"
+                f"<span class='month-bal'>잔액 <b>{fmt_won(info['end_bal'])}원</b></span>"
+                f"<a class='month-open-link' href='monthly/{ym}.html' aria-label='{y}년 {int(m_num)}월 운영위원회 재정보고 열기'>보고서 보기 →</a>"
+                f"</div>"
+                f"</article>"
+            )
+
+        year_sections.append(
+            f"<section class='year-group' data-year='{y}' data-year-tone='{ytone}' aria-labelledby='yg-{y}'>"
+            f"<div class='year-group-head'>"
+            f"<div class='year-group-title'><h3 id='yg-{y}'>{y}년</h3><span class='year-group-count'>{len(y_months)}개월</span></div>"
+            f"<div class='year-group-summary'>"
+            f"<span>수입 {fmt_won(ys['inc'])}원 · 지출 {fmt_won(ys['exp'])}원 · 연말잔액 <b>{fmt_won(yr_end)}원</b></span>"
+            f"<a class='year-annual-link' href='annual/{y}.html'>{y}년 결산 보기 →</a>"
+            f"</div>"
+            f"</div>"
+            f"<div class='month-grid'>{''.join(month_cards)}</div>"
+            f"</section>"
         )
 
     body = f"""
   <header class="page-masthead">
     <div>
       <h1>보고서 아카이브</h1>
-      <p class="lead">연도별 대의원대회 결산 보고서와 월별 운영위원회 재정보고 모음입니다.</p>
+      <p class="lead">연도별 색상 체계와 월별 수지·주요 지출 하이라이트로 재정 흐름을 한눈에 비교할 수 있습니다.</p>
     </div>
     <div class="masthead-meta">
       <span class="data-stamp">연간 {len(years)}건 · 월간 {len(months)}건</span>
@@ -857,11 +956,39 @@ def build_reports_archive_page(years, months, records):
   <section class="section-band" aria-labelledby="sec-monthly-arch">
     <div class="section-head">
       <h2 id="sec-monthly-arch">월간 운영위원회 재정보고 ({len(months)}개월)</h2>
-      <span class="section-sub">매월 운영위원회 제출용 재정 보고 내역</span>
+      <span id="archive-filter-status" class="section-sub" aria-live="polite">연도 버튼을 눌러 특정 연도만 모아볼 수 있습니다</span>
     </div>
-    <div class="archive-grid">{''.join(mon_cards)}</div>
+    <div class="year-filter-bar" role="group" aria-label="연도별 보고서 필터">
+      {''.join(year_chips)}
+    </div>
+    {''.join(year_sections)}
   </section>"""
-    return render_shell("보고서 아카이브", "reports", "..", body, "", "노동조합 월간·연간 재정보고 아카이브")
+    archive_script = """<script>
+(function(){
+  const chips = [...document.querySelectorAll(".year-chip")];
+  const groups = [...document.querySelectorAll(".year-group")];
+  const statusEl = document.getElementById("archive-filter-status");
+  if (!chips.length || !groups.length) return;
+  chips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const target = chip.dataset.filterYear;
+      chips.forEach((c) => c.setAttribute("aria-pressed", String(c === chip)));
+      let visibleCount = 0;
+      groups.forEach((g) => {
+        const match = target === "all" || g.dataset.year === target;
+        g.hidden = !match;
+        if (match) visibleCount += g.querySelectorAll(".month-card").length;
+      });
+      if (statusEl) {
+        statusEl.textContent = target === "all"
+          ? `전체 연도 ${visibleCount}개월 표시 중`
+          : `${target}년 ${visibleCount}개월만 모아보는 중`;
+      }
+    });
+  });
+})();
+</script>"""
+    return render_shell("보고서 아카이브", "reports", "..", body, archive_script, "노동조합 월간·연간 재정보고 아카이브")
 
 
 def main():

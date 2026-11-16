@@ -91,6 +91,11 @@
     --sig-grant-dark: #ecc05e;
     --sig-grant-soft-dark: #302815;
 
+    --sig-plum-light: #5e3a82;
+    --sig-plum-soft-light: #efe9f6;
+    --sig-plum-dark: #c29df0;
+    --sig-plum-soft-dark: #271f36;
+
     --sig-adj-bg-light: #f5efe4;
     --sig-adj-bg-dark: #25221a;
     --sig-subtot-bg-light: #eaedf2;
@@ -129,6 +134,10 @@
     --color-expense-soft: var(--sig-expense-soft-light);
     --color-grant: var(--sig-grant-light);
     --color-grant-soft: var(--sig-grant-soft-light);
+    --color-plum: var(--sig-plum-light);
+    --color-plum-soft: var(--sig-plum-soft-light);
+    --year-color: var(--color-accent);
+    --year-soft: var(--color-accent-soft);
 
     --color-adj-bg: var(--sig-adj-bg-light);
     --color-subtot-bg: var(--sig-subtot-bg-light);
@@ -198,6 +207,8 @@
       --color-expense-soft: var(--sig-expense-soft-dark);
       --color-grant: var(--sig-grant-dark);
       --color-grant-soft: var(--sig-grant-soft-dark);
+      --color-plum: var(--sig-plum-dark);
+      --color-plum-soft: var(--sig-plum-soft-dark);
 
       --color-adj-bg: var(--sig-adj-bg-dark);
       --color-subtot-bg: var(--sig-subtot-bg-dark);
@@ -251,6 +262,8 @@
       --color-expense-soft: light-dark(var(--sig-expense-soft-light), var(--sig-expense-soft-dark));
       --color-grant: light-dark(var(--sig-grant-light), var(--sig-grant-dark));
       --color-grant-soft: light-dark(var(--sig-grant-soft-light), var(--sig-grant-soft-dark));
+      --color-plum: light-dark(var(--sig-plum-light), var(--sig-plum-dark));
+      --color-plum-soft: light-dark(var(--sig-plum-soft-light), var(--sig-plum-soft-dark));
 
       --color-adj-bg: light-dark(var(--sig-adj-bg-light), var(--sig-adj-bg-dark));
       --color-subtot-bg: light-dark(var(--sig-subtot-bg-light), var(--sig-subtot-bg-dark));
@@ -1373,7 +1386,38 @@
     background-color: var(--color-adj-bg);
   }
 
-  /* Report Archive Index (Hairline editorial grid, zero shadows) */
+  /* Year Color Identity Bindings (Cobalt / Pine / Ochre / Plum) */
+  [data-year-tone="cobalt"] {
+    --year-color: var(--color-accent);
+    --year-soft: var(--color-accent-soft);
+  }
+
+  [data-year-tone="pine"] {
+    --year-color: var(--color-income);
+    --year-soft: var(--color-income-soft);
+  }
+
+  [data-year-tone="ochre"] {
+    --year-color: var(--color-grant);
+    --year-soft: var(--color-grant-soft);
+  }
+
+  [data-year-tone="plum"] {
+    --year-color: var(--color-plum);
+    --year-soft: var(--color-plum-soft);
+  }
+
+  .page-masthead[data-year-tone] {
+    border-block-end-color: var(--year-color);
+  }
+
+  .page-masthead[data-year-tone] .data-stamp {
+    background-color: var(--year-soft);
+    border-color: var(--year-color);
+    color: var(--year-color);
+  }
+
+  /* Report Archive Index (Year-grouped editorial tiles with micro visuals) */
   .archive-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
@@ -1392,6 +1436,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     min-inline-size: 0;
+    border-block-start: 3px solid var(--year-color);
   }
 
   .report-entry h3 {
@@ -1407,6 +1452,275 @@
 
   .report-entry .entry-link {
     align-self: flex-start;
+  }
+
+  .year-filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.45rem;
+    margin-block-end: 1.15rem;
+  }
+
+  .year-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-block: 0.38rem;
+    padding-inline: 0.78rem;
+    border: var(--rule-hair) solid var(--color-rule-ui);
+    border-radius: var(--radius-control);
+    background-color: var(--color-sheet);
+    color: var(--color-ink-2);
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .year-chip-swatch {
+    inline-size: 0.55rem;
+    block-size: 0.9rem;
+    border-radius: var(--radius-sharp);
+    background-color: var(--year-color);
+    flex-shrink: 0;
+  }
+
+  .year-chip:hover {
+    background-color: var(--color-well);
+    color: var(--color-ink);
+  }
+
+  .year-chip[aria-pressed="true"] {
+    background-color: var(--year-soft);
+    border-color: var(--year-color);
+    color: var(--year-color);
+    font-weight: 700;
+    box-shadow: inset 0 -2px 0 var(--year-color);
+  }
+
+  .year-group {
+    margin-block-end: 1.75rem;
+  }
+
+  .year-group[hidden] {
+    display: none;
+  }
+
+  .year-group-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 1rem;
+    padding-block: 0.7rem;
+    padding-inline: 0.95rem;
+    background-color: var(--year-soft);
+    border: var(--rule-hair) solid var(--color-rule);
+    border-block-start: 3px solid var(--year-color);
+    border-start-start-radius: var(--radius-control);
+    border-start-end-radius: var(--radius-control);
+  }
+
+  .year-group-title {
+    display: flex;
+    align-items: baseline;
+    gap: 0.55rem;
+  }
+
+  .year-group-title h3 {
+    font-size: 1.05rem;
+    color: var(--year-color);
+  }
+
+  .year-group-count {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--color-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .year-group-summary {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.55rem 0.9rem;
+    font-size: 0.8rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-ink-2);
+  }
+
+  .year-annual-link {
+    font-weight: 700;
+    color: var(--year-color);
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+  }
+
+  .month-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: var(--rule-hair);
+    background-color: var(--color-rule);
+    border-inline: var(--rule-hair) solid var(--color-rule);
+    border-block-end: var(--rule-hair) solid var(--color-rule);
+  }
+
+  .month-card {
+    background-color: var(--color-sheet);
+    padding-block: 0.85rem;
+    padding-inline: 0.95rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.6rem;
+    min-inline-size: 0;
+    border-inline-start: 3px solid var(--year-color);
+  }
+
+  .month-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .month-num-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 0.4rem;
+  }
+
+  .month-num {
+    font-size: 1.25rem;
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    color: var(--year-color);
+    line-height: 1.1;
+  }
+
+  .month-tx-cnt {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--color-muted);
+  }
+
+  .net-badge {
+    display: inline-flex;
+    align-items: center;
+    padding-block: 0.14rem;
+    padding-inline: 0.45rem;
+    border-radius: var(--radius-control);
+    font-size: 0.74rem;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    border: var(--rule-hair) solid var(--color-rule);
+    background-color: var(--color-well);
+    color: var(--color-ink-2);
+  }
+
+  .net-badge[data-net="surplus"] {
+    background-color: var(--color-income-soft);
+    border-color: var(--color-income);
+    color: var(--color-income);
+  }
+
+  .net-badge[data-net="deficit"] {
+    background-color: var(--color-expense-soft);
+    border-color: var(--color-expense);
+    color: var(--color-expense);
+  }
+
+  .month-bars {
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .month-bar-row {
+    display: grid;
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.76rem;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .month-bar-label {
+    color: var(--color-muted);
+    font-weight: 600;
+  }
+
+  .month-bar-track {
+    block-size: 6px;
+    background-color: var(--color-well);
+    border-radius: var(--radius-sharp);
+    overflow: clip;
+  }
+
+  .month-bar-fill {
+    block-size: 100%;
+    inline-size: var(--bar-pct, 0%);
+    background-color: var(--bar-color, var(--color-accent));
+  }
+
+  .month-bar-fill.inc {
+    --bar-color: var(--color-income);
+  }
+
+  .month-bar-fill.exp {
+    --bar-color: var(--color-expense);
+  }
+
+  .month-bar-amt {
+    color: var(--color-ink-2);
+    font-weight: 600;
+  }
+
+  .month-highlight {
+    font-size: 0.78rem;
+    color: var(--color-ink-2);
+    padding-block: 0.34rem;
+    padding-inline: 0.55rem;
+    background-color: var(--color-canvas);
+    border-radius: var(--radius-sharp);
+    word-break: keep-all;
+  }
+
+  .month-highlight strong {
+    color: var(--color-ink);
+  }
+
+  .month-card-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding-block-start: 0.45rem;
+    border-block-start: var(--rule-hair) solid var(--color-rule);
+    font-size: 0.78rem;
+  }
+
+  .month-bal {
+    font-variant-numeric: tabular-nums;
+    color: var(--color-muted);
+  }
+
+  .month-bal b {
+    color: var(--color-ink);
+  }
+
+  .month-open-link {
+    font-weight: 700;
+    color: var(--year-color);
+    text-decoration: none;
+    border-block-end: var(--rule-hair) solid var(--year-color);
+    padding-block-end: 0.05rem;
+    white-space: nowrap;
+  }
+
+  .month-open-link:hover {
+    border-block-end-width: 2px;
   }
 
   .pager-bar {
@@ -1587,6 +1901,11 @@
     .table-wrapper,
     .archive-grid,
     .report-entry,
+    .year-chip,
+    .year-group-head,
+    .month-grid,
+    .month-card,
+    .net-badge,
     .site-menu {
       border-color: ButtonBorder;
     }
@@ -1594,6 +1913,7 @@
     .site-header.is-wide .site-menu a[aria-current="page"],
     .site-menu a[aria-current="page"],
     .mode-btn[aria-pressed="true"],
+    .year-chip[aria-pressed="true"],
     .minimap-lens {
       border-color: Highlight;
       outline: 1px solid Highlight;
