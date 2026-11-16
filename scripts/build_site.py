@@ -20,14 +20,14 @@ SITE_DIR = ROOT / "_site"
 
 plt.rcParams["font.family"] = ["NanumGothic", "Malgun Gothic", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
-plt.rcParams["axes.facecolor"] = "#fcfcfa"
-plt.rcParams["figure.facecolor"] = "#fcfcfa"
-plt.rcParams["axes.edgecolor"] = "#cdc9bd"
-plt.rcParams["axes.labelcolor"] = "#2b303a"
-plt.rcParams["xtick.color"] = "#4a505e"
-plt.rcParams["ytick.color"] = "#4a505e"
-plt.rcParams["text.color"] = "#16181d"
-PALETTE = ["#1b4079", "#2d63a8", "#1c6b4e", "#b3461d", "#9e6b08", "#177278", "#6b468c", "#5c6473"]
+plt.rcParams["axes.facecolor"] = "#ffffff"
+plt.rcParams["figure.facecolor"] = "#ffffff"
+plt.rcParams["axes.edgecolor"] = "#d4d9e6"
+plt.rcParams["axes.labelcolor"] = "#1f2437"
+plt.rcParams["xtick.color"] = "#4e5366"
+plt.rcParams["ytick.color"] = "#4e5366"
+plt.rcParams["text.color"] = "#0b051a"
+PALETTE = ["#516db2", "#334f99", "#16654e", "#b4431e", "#8d5800", "#177278", "#6b468c", "#4e5366"]
 
 
 def year_tone(year: int) -> str:
@@ -107,14 +107,24 @@ def render_shell(title: str, active_nav: str, rel_root: str, body_html: str, ext
         cur = ' aria-current="page"' if key == active_nav else ""
         links_html.append(f'<li><a href="{prefix}{href}"{cur}>{label}</a></li>')
 
+    favicon_svg = (
+        "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E"
+        "%3Cpath fill='%23516DB2' d='M48.2 4L10 26v48l38.2 22V76.5L26.5 64V36l21.7-12.5z'/%3E"
+        "%3Cpath fill='%230B051A' d='M51.8 4L90 26v48L51.8 96V76.5L73.5 64V36L51.8 23.5z'/%3E"
+        "%3Cpath fill='%230B051A' d='M48.2 28.5L32 37.8l16.2 8.4z'/%3E"
+        "%3Cpath fill='%23516DB2' d='M51.8 28.5L68 37.8l-16.2 8.4z'/%3E%3C/svg%3E"
+    )
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="color-scheme" content="light dark">
+<meta name="color-scheme" content="light">
+<script>try{{const s=localStorage.getItem("color-scheme");if(s==="dark"||s==="light"){{document.querySelector('meta[name="color-scheme"]').content=s;document.documentElement.dataset.theme=s;}}}}catch(e){{}}</script>
 <meta name="description" content="{html.escape(page_desc or title)}">
 <title>{html.escape(title)} | 물류노동조합 회계</title>
+<link rel="icon" type="image/svg+xml" href="{favicon_svg}">
 <link rel="stylesheet" href="{prefix}assets/app.css">
 </head>
 <body>
@@ -122,26 +132,44 @@ def render_shell(title: str, active_nav: str, rel_root: str, body_html: str, ext
 <header class="site-header">
   <div class="header-inner">
     <a class="site-logo" href="{prefix}index.html">
-      <svg class="site-mark" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <rect x="3" y="4" width="18" height="16" rx="2"/>
-        <line x1="3" y1="10" x2="21" y2="10"/>
-        <line x1="9" y1="10" x2="9" y2="20"/>
+      <svg class="site-mark" aria-hidden="true" viewBox="0 0 100 100">
+        <path fill="var(--color-logo, #516DB2)" d="M48.2 4L10 26v48l38.2 22V76.5L26.5 64V36l21.7-12.5z"/>
+        <path fill="var(--color-ink, #0B051A)" d="M51.8 4L90 26v48L51.8 96V76.5L73.5 64V36L51.8 23.5z"/>
+        <path fill="var(--color-ink, #0B051A)" d="M48.2 28.5L32 37.8l16.2 8.4z"/>
+        <path fill="var(--color-logo, #516DB2)" d="M51.8 28.5L68 37.8l-16.2 8.4z"/>
       </svg>
       <span>물류노동조합 회계</span>
     </a>
-    <nav class="site-nav" aria-label="주요 메뉴">
-      <button class="menu-button" type="button" popovertarget="site-menu" popovertargetaction="toggle" aria-controls="site-menu">
-        <svg class="menu-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-          <line x1="4" y1="7" x2="20" y2="7"/>
-          <line x1="4" y1="12" x2="20" y2="12"/>
-          <line x1="4" y1="17" x2="20" y2="17"/>
-        </svg>
-        <span>메뉴</span>
+    <div class="header-controls">
+      <nav class="site-nav" aria-label="주요 메뉴">
+        <button class="menu-button" type="button" popovertarget="site-menu" popovertargetaction="toggle" aria-controls="site-menu">
+          <svg class="menu-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <line x1="4" y1="7" x2="20" y2="7"/>
+            <line x1="4" y1="12" x2="20" y2="12"/>
+            <line x1="4" y1="17" x2="20" y2="17"/>
+          </svg>
+          <span>메뉴</span>
+        </button>
+        <ul id="site-menu" class="site-menu" popover="auto">
+          {''.join(links_html)}
+        </ul>
+      </nav>
+      <button id="theme-toggle" class="theme-toggle" type="button" aria-label="다크 모드로 전환" aria-pressed="false">
+        <span class="theme-opt-dark">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+          </svg>
+          <span>다크</span>
+        </span>
+        <span class="theme-opt-light">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="4"/>
+            <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+          </svg>
+          <span>라이트</span>
+        </span>
       </button>
-      <ul id="site-menu" class="site-menu" popover="auto">
-        {''.join(links_html)}
-      </ul>
-    </nav>
+    </div>
   </div>
 </header>
 <main id="main-content" class="main-wrap">
@@ -433,21 +461,21 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax1 = plt.subplots(figsize=(10, 4.4), dpi=180)
     x = list(range(len(months)))
     w = 0.36
-    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#1c6b4e")
-    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#b3461d")
+    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#16654e")
+    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#b4431e")
     ax1.set_ylabel("월간 수지 (만원)")
     ax1.set_ylim(0, max(m_inc + m_exp + [10]) * 1.15)
     ax1.set_xticks(x)
     ax1.set_xticklabels([m[5:] + "월" for m in months])
-    ax1.grid(axis="y", linestyle="--", color="#cdc9bd", alpha=0.7)
+    ax1.grid(axis="y", linestyle="--", color="#d4d9e6", alpha=0.8)
     ax1.spines["top"].set_visible(False)
     ax2 = ax1.twinx()
-    ax2.plot(x, m_end, color="#1b4079", marker="o", linewidth=2.2, label="기말 통장잔액")
+    ax2.plot(x, m_end, color="#516db2", marker="o", linewidth=2.2, label="기말 통장잔액")
     ax2.set_ylabel("기말 잔액 (만원)")
     ax2.set_ylim(0, max(m_end + [10]) * 1.18)
     ax2.spines["top"].set_visible(False)
     for i, v in enumerate(m_end):
-        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#1b4079")
+        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#334f99")
     l1, lb1 = ax1.get_legend_handles_labels()
     l2, lb2 = ax2.get_legend_handles_labels()
     ax1.legend(l1 + l2, lb1 + lb2, loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=3, frameon=False)
@@ -474,7 +502,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 대분류별 사업 지출 비중", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#cdc9bd", alpha=0.7)
+    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
@@ -492,13 +520,13 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax = plt.subplots(figsize=(6.8, 4.4), dpi=180)
     labels = [k for k, _ in reversed(top_m)]
     vals = [v / 10000.0 for _, v in reversed(top_m)]
-    bars = ax.barh(labels, vals, color="#2d63a8")
+    bars = ax.barh(labels, vals, color="#516db2")
     for bar, v in zip(bars, vals):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.25 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 주요 세부활동별 지출 TOP 10", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#cdc9bd", alpha=0.7)
+    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()
@@ -516,13 +544,13 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax = plt.subplots(figsize=(6.4, 4.1), dpi=180)
     labels = [k for k, _ in reversed(et_items)]
     vals = [v / 10000.0 for _, v in reversed(et_items)]
-    bars = ax.barh(labels, vals, color="#177278")
+    bars = ax.barh(labels, vals, color="#334f99")
     for bar, v in zip(bars, vals):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원 ({v*10000/tot_exp*100:.1f}%)", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.35 if vals else 10)
     ax.set_xlabel("지출액 (만원)")
     ax.set_title(f"{target_year}년 지출방식별 집행 현황", fontsize=11.5, fontweight="bold")
-    ax.grid(axis="x", linestyle="--", color="#cdc9bd", alpha=0.7)
+    ax.grid(axis="x", linestyle="--", color="#d4d9e6", alpha=0.8)
     ax.spines["top"].set_visible(False)
     ax.spines["right"].set_visible(False)
     fig.tight_layout()

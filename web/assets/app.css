@@ -34,76 +34,79 @@
 
 @layer tokens {
   :root {
-    color-scheme: light dark;
+    color-scheme: light;
 
-    /* Raw tonal stops — Astryx-style structured ramp (Stone/Slate + Civic Signals) */
-    --stone-canvas-light: #f3f2ed;
-    --stone-sheet-light: #fcfcfa;
-    --stone-well-light: #e8e6de;
-    --stone-hover-light: #dfddd3;
-    --ink-strong-light: #16181d;
-    --ink-body-light: #2b303a;
-    --ink-muted-light: #4a505e;
-    --rule-hair-light: #cdc9bd;
-    --rule-ui-light: #76746c;
-    --rule-bar-light: #1f242d;
-    --header-bg-light: rgba(252, 252, 250, 0.92);
-    --thead-bg-light: #1d2430;
-    --thead-ink-light: #fcfcfa;
+    /* Option A: Delft Cobalt & Union Logo Periwinkle (#516DB2 + #0B051A) */
+    --stone-canvas-light: #f6f8fc;
+    --stone-sheet-light: #ffffff;
+    --stone-well-light: #edf1fa;
+    --stone-hover-light: #e2e8f5;
+    --ink-strong-light: #0b051a;
+    --ink-body-light: #1f2437;
+    --ink-muted-light: #4e5366;
+    --rule-hair-light: #d4d9e6;
+    --rule-ui-light: #6e768e;
+    --rule-bar-light: #0b051a;
+    --header-bg-light: rgba(255, 255, 255, 0.94);
+    --thead-bg-light: #0b051a;
+    --thead-ink-light: #ffffff;
 
-    --stone-canvas-dark: #111318;
-    --stone-sheet-dark: #171a21;
-    --stone-well-dark: #20242e;
-    --stone-hover-dark: #292e3b;
-    --ink-strong-dark: #f2f1ec;
-    --ink-body-dark: #d4d6de;
-    --ink-muted-dark: #a2a8b6;
-    --rule-hair-dark: #2f3441;
-    --rule-ui-dark: #8b91a1;
-    --rule-bar-dark: #d8dae2;
-    --header-bg-dark: rgba(23, 26, 33, 0.92);
-    --thead-bg-dark: #232834;
-    --thead-ink-dark: #f2f1ec;
+    --stone-canvas-dark: #0d101b;
+    --stone-sheet-dark: #141929;
+    --stone-well-dark: #1c2338;
+    --stone-hover-dark: #252e4a;
+    --ink-strong-dark: #f4f6fb;
+    --ink-body-dark: #d5dcef;
+    --ink-muted-dark: #9ca6c4;
+    --rule-hair-dark: #2b3452;
+    --rule-ui-dark: #7e89ab;
+    --rule-bar-dark: #dce2f2;
+    --header-bg-dark: rgba(20, 25, 41, 0.94);
+    --thead-bg-dark: #1f2740;
+    --thead-ink-dark: #f4f6fb;
 
-    /* Civic Signals (Light / Dark paired for >= 4.5:1 contrast) */
-    --sig-cobalt-light: #1b4079;
+    /* Brand & Civic Signals (Light / Dark paired for >= 4.5:1 contrast) */
+    --sig-logo-light: #516db2;
+    --sig-logo-dark: #7994de;
+
+    --sig-cobalt-light: #334f99;
     --sig-cobalt-ink-light: #ffffff;
-    --sig-cobalt-soft-light: #e6ecf5;
-    --sig-cobalt-soft-ink-light: #13305c;
+    --sig-cobalt-soft-light: #edf1fa;
+    --sig-cobalt-soft-ink-light: #243973;
 
-    --sig-cobalt-dark: #82abf8;
-    --sig-cobalt-ink-dark: #0e1624;
-    --sig-cobalt-soft-dark: #1c2942;
-    --sig-cobalt-soft-ink-dark: #c5d9fd;
+    --sig-cobalt-dark: #8fa8ec;
+    --sig-cobalt-ink-dark: #0b1020;
+    --sig-cobalt-soft-dark: #1d2847;
+    --sig-cobalt-soft-ink-dark: #d0ddfb;
 
-    --sig-income-light: #175c43;
-    --sig-income-soft-light: #e4f1ec;
-    --sig-income-dark: #63cfa5;
-    --sig-income-soft-dark: #153027;
+    --sig-income-light: #16654e;
+    --sig-income-soft-light: #e6f3ee;
+    --sig-income-dark: #5cd0a6;
+    --sig-income-soft-dark: #132e27;
 
-    --sig-expense-light: #a33b15;
-    --sig-expense-soft-light: #f8eae4;
-    --sig-expense-dark: #f2946e;
-    --sig-expense-soft-dark: #342018;
+    --sig-expense-light: #b4431e;
+    --sig-expense-soft-light: #fbede8;
+    --sig-expense-dark: #f49774;
+    --sig-expense-soft-dark: #331e18;
 
-    --sig-grant-light: #7c4d00;
-    --sig-grant-soft-light: #f6efe0;
-    --sig-grant-dark: #ecc05e;
-    --sig-grant-soft-dark: #302815;
+    --sig-grant-light: #8d5800;
+    --sig-grant-soft-light: #faf2e1;
+    --sig-grant-dark: #edc164;
+    --sig-grant-soft-dark: #2f2614;
 
-    --sig-adj-bg-light: #f5efe4;
-    --sig-adj-bg-dark: #25221a;
-    --sig-subtot-bg-light: #eaedf2;
-    --sig-subtot-bg-dark: #232833;
-    --sig-tot-bg-light: #dfe3eb;
-    --sig-tot-bg-dark: #2c3240;
+    --sig-adj-bg-light: #f6f2ea;
+    --sig-adj-bg-dark: #23211b;
+    --sig-subtot-bg-light: #edf1fa;
+    --sig-subtot-bg-dark: #1f2740;
+    --sig-tot-bg-light: #dfe6f5;
+    --sig-tot-bg-dark: #293352;
 
-    --scroll-track-light: #eae8e0;
-    --scroll-thumb-light: #7a7870;
-    --scroll-track-dark: #1b1e26;
-    --scroll-thumb-dark: #6b7280;
+    --scroll-track-light: #edf1fa;
+    --scroll-thumb-light: #6e768e;
+    --scroll-track-dark: #141929;
+    --scroll-thumb-dark: #5b6588;
 
-    /* Semantic Defaults (Light) */
+    /* Semantic Defaults (Light Default) */
     --color-canvas: var(--stone-canvas-light);
     --color-sheet: var(--stone-sheet-light);
     --color-well: var(--stone-well-light);
@@ -118,6 +121,7 @@
     --color-thead-bg: var(--thead-bg-light);
     --color-thead-ink: var(--thead-ink-light);
 
+    --color-logo: var(--sig-logo-light);
     --color-accent: var(--sig-cobalt-light);
     --color-accent-ink: var(--sig-cobalt-ink-light);
     --color-accent-soft: var(--sig-cobalt-soft-light);
@@ -140,23 +144,23 @@
     --color-scrollbar-thumb: var(--scroll-thumb-light);
 
     /* Chart visualization tokens (consumed by dashboard.js) */
-    --chart-cobalt: #1b4079;
-    --chart-blue: #2d63a8;
-    --chart-income: #1c6b4e;
-    --chart-expense: #b3461d;
-    --chart-grant: #9e6b08;
-    --chart-slate: #5c6473;
+    --chart-cobalt: #516db2;
+    --chart-blue: #334f99;
+    --chart-income: #16654e;
+    --chart-expense: #b4431e;
+    --chart-grant: #8d5800;
+    --chart-slate: #4e5366;
     --chart-teal: #177278;
     --chart-plum: #6b468c;
-    --chart-grid: rgba(118, 116, 108, 0.22);
-    --chart-tick: #4a505e;
-    --chart-tooltip-bg: #16181d;
-    --chart-tooltip-ink: #fcfcfa;
+    --chart-grid: rgba(110, 118, 142, 0.2);
+    --chart-tick: #4e5366;
+    --chart-tooltip-bg: #0b051a;
+    --chart-tooltip-ink: #ffffff;
     --color-thead-rule: rgba(255, 255, 255, 0.16);
-    --color-backdrop: rgba(17, 19, 24, 0.72);
-    --minimap-shade: rgba(17, 19, 24, 0.12);
-    --minimap-lens-bg: rgba(27, 64, 121, 0.14);
-    --minimap-fill: rgba(27, 64, 121, 0.12);
+    --color-backdrop: rgba(11, 5, 26, 0.68);
+    --minimap-shade: rgba(11, 5, 26, 0.12);
+    --minimap-lens-bg: rgba(81, 109, 178, 0.16);
+    --minimap-fill: rgba(81, 109, 178, 0.14);
 
     /* Typography & Scales */
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
@@ -173,57 +177,59 @@
     --target-size: 32px;
   }
 
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --color-canvas: var(--stone-canvas-dark);
-      --color-sheet: var(--stone-sheet-dark);
-      --color-well: var(--stone-well-dark);
-      --color-hover: var(--stone-hover-dark);
-      --color-ink: var(--ink-strong-dark);
-      --color-ink-2: var(--ink-body-dark);
-      --color-muted: var(--ink-muted-dark);
-      --color-rule: var(--rule-hair-dark);
-      --color-rule-ui: var(--rule-ui-dark);
-      --color-rule-strong: var(--rule-bar-dark);
-      --color-header-bg: var(--header-bg-dark);
-      --color-thead-bg: var(--thead-bg-dark);
-      --color-thead-ink: var(--thead-ink-dark);
+  :root:has(> head > meta[name="color-scheme"][content="dark"]),
+  :root[data-theme="dark"] {
+    color-scheme: dark;
 
-      --color-accent: var(--sig-cobalt-dark);
-      --color-accent-ink: var(--sig-cobalt-ink-dark);
-      --color-accent-soft: var(--sig-cobalt-soft-dark);
-      --color-accent-soft-ink: var(--sig-cobalt-soft-ink-dark);
+    --color-canvas: var(--stone-canvas-dark);
+    --color-sheet: var(--stone-sheet-dark);
+    --color-well: var(--stone-well-dark);
+    --color-hover: var(--stone-hover-dark);
+    --color-ink: var(--ink-strong-dark);
+    --color-ink-2: var(--ink-body-dark);
+    --color-muted: var(--ink-muted-dark);
+    --color-rule: var(--rule-hair-dark);
+    --color-rule-ui: var(--rule-ui-dark);
+    --color-rule-strong: var(--rule-bar-dark);
+    --color-header-bg: var(--header-bg-dark);
+    --color-thead-bg: var(--thead-bg-dark);
+    --color-thead-ink: var(--thead-ink-dark);
 
-      --color-income: var(--sig-income-dark);
-      --color-income-soft: var(--sig-income-soft-dark);
-      --color-expense: var(--sig-expense-dark);
-      --color-expense-soft: var(--sig-expense-soft-dark);
-      --color-grant: var(--sig-grant-dark);
-      --color-grant-soft: var(--sig-grant-soft-dark);
+    --color-logo: var(--sig-logo-dark);
+    --color-accent: var(--sig-cobalt-dark);
+    --color-accent-ink: var(--sig-cobalt-ink-dark);
+    --color-accent-soft: var(--sig-cobalt-soft-dark);
+    --color-accent-soft-ink: var(--sig-cobalt-soft-ink-dark);
 
-      --color-adj-bg: var(--sig-adj-bg-dark);
-      --color-subtot-bg: var(--sig-subtot-bg-dark);
-      --color-tot-bg: var(--sig-tot-bg-dark);
+    --color-income: var(--sig-income-dark);
+    --color-income-soft: var(--sig-income-soft-dark);
+    --color-expense: var(--sig-expense-dark);
+    --color-expense-soft: var(--sig-expense-soft-dark);
+    --color-grant: var(--sig-grant-dark);
+    --color-grant-soft: var(--sig-grant-soft-dark);
 
-      --color-scrollbar-track: var(--scroll-track-dark);
-      --color-scrollbar-thumb: var(--scroll-thumb-dark);
+    --color-adj-bg: var(--sig-adj-bg-dark);
+    --color-subtot-bg: var(--sig-subtot-bg-dark);
+    --color-tot-bg: var(--sig-tot-bg-dark);
 
-      --chart-cobalt: #82abf8;
-      --chart-blue: #6196e8;
-      --chart-income: #5ecba1;
-      --chart-expense: #f2946e;
-      --chart-grant: #ecc05e;
-      --chart-slate: #9aa2b1;
-      --chart-teal: #58c4ca;
-      --chart-plum: #ba96e0;
-      --chart-grid: rgba(162, 168, 182, 0.16);
-      --chart-tick: #a2a8b6;
-      --chart-tooltip-bg: #232834;
-      --chart-tooltip-ink: #f2f1ec;
-      --minimap-shade: rgba(0, 0, 0, 0.35);
-      --minimap-lens-bg: rgba(130, 171, 248, 0.16);
-      --minimap-fill: rgba(130, 171, 248, 0.15);
-    }
+    --color-scrollbar-track: var(--scroll-track-dark);
+    --color-scrollbar-thumb: var(--scroll-thumb-dark);
+
+    --chart-cobalt: #7994de;
+    --chart-blue: #8fa8ec;
+    --chart-income: #5cd0a6;
+    --chart-expense: #f49774;
+    --chart-grant: #edc164;
+    --chart-slate: #9ca6c4;
+    --chart-teal: #58c4ca;
+    --chart-plum: #ba96e0;
+    --chart-grid: rgba(156, 166, 196, 0.16);
+    --chart-tick: #9ca6c4;
+    --chart-tooltip-bg: #1f2740;
+    --chart-tooltip-ink: #f4f6fb;
+    --minimap-shade: rgba(0, 0, 0, 0.35);
+    --minimap-lens-bg: rgba(143, 168, 236, 0.16);
+    --minimap-fill: rgba(143, 168, 236, 0.15);
   }
 
   @supports (color: light-dark(white, black)) {
@@ -242,6 +248,7 @@
       --color-thead-bg: light-dark(var(--thead-bg-light), var(--thead-bg-dark));
       --color-thead-ink: light-dark(var(--thead-ink-light), var(--thead-ink-dark));
 
+      --color-logo: light-dark(var(--sig-logo-light), var(--sig-logo-dark));
       --color-accent: light-dark(var(--sig-cobalt-light), var(--sig-cobalt-dark));
       --color-accent-ink: light-dark(var(--sig-cobalt-ink-light), var(--sig-cobalt-ink-dark));
       --color-accent-soft: light-dark(var(--sig-cobalt-soft-light), var(--sig-cobalt-soft-dark));
@@ -417,10 +424,68 @@
   }
 
   .site-mark {
-    inline-size: 1.25rem;
-    block-size: 1.25rem;
-    color: var(--color-accent);
+    inline-size: 1.55rem;
+    block-size: 1.55rem;
     flex-shrink: 0;
+  }
+
+  .header-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-inline-size: 0;
+  }
+
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding-block: 0.35rem;
+    padding-inline: 0.6rem;
+    background-color: var(--color-sheet);
+    border: var(--rule-hair) solid var(--color-rule-ui);
+    border-radius: var(--radius-control);
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    touch-action: manipulation;
+  }
+
+  .theme-toggle:hover:not(:disabled) {
+    background-color: var(--color-well);
+    border-color: var(--color-ink);
+  }
+
+  .theme-toggle svg {
+    inline-size: 1rem;
+    block-size: 1rem;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle .theme-opt-light {
+    display: none;
+  }
+
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .theme-opt-dark,
+  :root[data-theme="dark"] .theme-toggle .theme-opt-dark {
+    display: none;
+  }
+
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-toggle .theme-opt-light,
+  :root[data-theme="dark"] .theme-toggle .theme-opt-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .theme-opt-dark,
+  .theme-opt-light {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
   }
 
   .menu-button {
@@ -1375,24 +1440,26 @@
     background-color: var(--color-adj-bg);
   }
 
-  /* Alternating Year Identity (Single Accent Cobalt vs Calm Slate Neutral) */
+  /* Alternating Year Identity (Single Union Blue Accent vs Calm Slate Neutral) */
   [data-year-tone="accent"] {
     --year-color: var(--color-accent);
     --year-soft: var(--color-accent-soft);
+    --year-bar: var(--color-logo);
   }
 
   [data-year-tone="neutral"] {
     --year-color: var(--color-ink-2);
     --year-soft: var(--color-well);
+    --year-bar: var(--color-ink-2);
   }
 
   .page-masthead[data-year-tone] {
-    border-block-end-color: var(--year-color);
+    border-block-end-color: var(--year-bar);
   }
 
   .page-masthead[data-year-tone] .data-stamp {
     background-color: var(--year-soft);
-    border-color: var(--year-color);
+    border-color: var(--year-bar);
     color: var(--year-color);
   }
 
@@ -1415,7 +1482,7 @@
     justify-content: space-between;
     gap: 0.75rem;
     min-inline-size: 0;
-    border-block-start: 3px solid var(--year-color);
+    border-block-start: 3px solid var(--year-bar, var(--year-color));
   }
 
   .report-entry h3 {
@@ -1497,7 +1564,7 @@
     padding-inline: 0.95rem;
     background-color: var(--year-soft);
     border: var(--rule-hair) solid var(--color-rule);
-    border-block-start: 3px solid var(--year-color);
+    border-block-start: 3px solid var(--year-bar, var(--year-color));
     border-start-start-radius: var(--radius-control);
     border-start-end-radius: var(--radius-control);
   }
@@ -1555,7 +1622,7 @@
     justify-content: space-between;
     gap: 0.6rem;
     min-inline-size: 0;
-    border-inline-start: 3px solid var(--year-color);
+    border-inline-start: 3px solid var(--year-bar, var(--year-color));
   }
 
   .month-card-top {
@@ -1853,6 +1920,7 @@
     .year-group-head,
     .month-grid,
     .month-card,
+    .theme-toggle,
     .site-menu {
       border-color: ButtonBorder;
     }

@@ -832,6 +832,7 @@
       applyFilters();
     });
 
+    window.addEventListener("themechange", applyFilters);
     if (window.matchMedia) {
       window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", applyFilters);
     }
