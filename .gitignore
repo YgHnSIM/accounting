@@ -9,6 +9,7 @@ config/people.json
 config/members.json
 config/external_people.json
 config/title_rules.json
+directory/
 data/local/
 
 # Python / OS noise

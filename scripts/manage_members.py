@@ -20,6 +20,7 @@ UNITS_PATH = ROOT / "config" / "units.json"
 COA_PATH = ROOT / "config" / "coa.json"
 LEDGER_LATEST_PATH = ROOT / "data" / "latest" / "ledger.json"
 DEFAULT_DB_PATH = ROOT / "data" / "local" / "accounting.db"
+DEFAULT_DIR_MD = ROOT / "directory"
 
 
 def _save_json(path: Path, data: dict):
@@ -164,7 +165,8 @@ def cmd_join(args):
     })
     _save_json(DEFAULT_MEMBERS_PATH, doc)
     sync_privacy_with_directory()
-    print(f"가입 처리 완료: {pid} {args.name.strip()} ({ucode}, {join_date}) + privacy.json 동기화됨")
+    export_directory_markdown()
+    print(f"가입 처리 완료: {pid} {args.name.strip()} ({ucode}, {join_date}) + privacy.json·directory/ 동기화됨")
 
 
 def cmd_withdraw(args):
@@ -187,6 +189,7 @@ def cmd_withdraw(args):
         "reason": (args.reason or "조합 탈퇴").strip(),
     })
     _save_json(DEFAULT_MEMBERS_PATH, doc)
+    export_directory_markdown()
     print(f"탈퇴 처리 완료 (이력 보존): {m['person_id']} {m['name']} ({w_date})")
 
 
@@ -220,6 +223,7 @@ def cmd_rejoin(args):
     })
     _save_json(DEFAULT_MEMBERS_PATH, doc)
     sync_privacy_with_directory()
+    export_directory_markdown()
     print(f"재가입 처리 완료: {m['person_id']} {m['name']} ({next_unit}, {r_date})")
 
 
@@ -245,6 +249,7 @@ def cmd_transfer(args):
         "reason": (args.reason or "지부 이동").strip(),
     })
     _save_json(DEFAULT_MEMBERS_PATH, doc)
+    export_directory_markdown()
     print(f"소속 이동 완료: {m['person_id']} {m['name']} ({from_unit} -> {to_unit}, {t_date})")
 
 
@@ -280,7 +285,205 @@ def cmd_add_external(args):
     })
     _save_json(DEFAULT_EXTERNAL_PATH, doc)
     sync_privacy_with_directory()
-    print(f"외부인 추가 완료: {pid} {args.name.strip()} ({args.org}) + privacy.json 동기화됨")
+    export_directory_markdown()
+    print(f"외부인 추가 완료: {pid} {args.name.strip()} ({args.org}) + privacy.json·directory/ 동기화됨")
+
+
+def _md_cell(val) -> str:
+    s = str(val or "").strip()
+    return s.replace("|", "\\|") if s else "-"
+
+
+def export_directory_markdown(out_dir: Path = DEFAULT_DIR_MD) -> list[Path]:
+    """Render readable Markdown reference files from JSON dictionaries into gitignored directory/."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    bundle = load_directory_bundle(ROOT / "config")
+    units_doc = load_json_if_exists(UNITS_PATH)
+    unit_info = {u["code"]: u for u in units_doc.get("units", [])}
+
+    members = bundle.get("members", [])
+    events = bundle.get("membership_events", [])
+    externals = bundle.get("external_people", [])
+    rules = bundle.get("title_rules", {})
+    id_to_name = bundle.get("id_to_name", {})
+
+    active_members = [m for m in members if m.get("status") == "active"]
+    former_members = [m for m in members if m.get("status") != "active"]
+    by_unit_active = Counter(m.get("unit_code", "") for m in active_members)
+    by_shift_active = Counter(m.get("shift") or "미지정" for m in active_members)
+    by_emp_active = Counter(m.get("employment_type") or "미지정" for m in active_members)
+    now_str = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+    # 1. directory/README.md
+    unit_rows = []
+    for code in ("AY", "BP", "HQ", "SS"):
+        u = unit_info.get(code, {})
+        cnt = by_unit_active.get(code, 0)
+        tot = sum(1 for m in members if m.get("unit_code") == code)
+        unit_rows.append(
+            f"| `{code}` | {u.get('name', code)} | {u.get('fullName', '')} | **{cnt}명** | {tot}명 |"
+        )
+    shift_summary = " · ".join(f"{k} {v}명" for k, v in by_shift_active.items())
+    emp_summary = " · ".join(f"{k} {v}명" for k, v in by_emp_active.items())
+
+    readme_md = "\n".join([
+        "# 인명·직책 관리 사전 안내 (로컬 전용 · Git 제외)",
+        "",
+        f"> 마지막 동기화: `{now_str}` · 원본: `config/members.json`, `config/external_people.json`, `config/title_rules.json`",
+        "> 이 폴더(`directory/`) 전체는 `.gitignore`에 등록되어 GitHub에 올라가지 않습니다.",
+        "",
+        "## 문서 목록",
+        "",
+        "| 문서 | 내용 | 건수 |",
+        "| :--- | :--- | :---: |",
+        f"| [members.md](members.md) | 지부별 현직 조합원 명부 · 과거/이력 조합원 · 가입/탈퇴/이동 로그 | {len(members)}명 |",
+        f"| [external_people.md](external_people.md) | 본사·연대노조·상급단체 등 외부인 인명사전 | {len(externals)}명 |",
+        f"| [title_rules.md](title_rules.md) | 정식 성명 통일 정책 · 제외 목록 · 별칭 매핑 · 직책 매칭표 | 별칭 {len(rules.get('person_aliases', []))} · 직책 {len(rules.get('person_roles', []))} |",
+        "",
+        "## 현직 조합원 요약",
+        "",
+        "| 코드 | 지부 | 정식 명칭 | 현직 인원 | 누적(과거 포함) |",
+        "| :--- | :--- | :--- | :---: | :---: |",
+        *unit_rows,
+        "",
+        f"- **근무 구분 (현직 {len(active_members)}명)**: {shift_summary}",
+        f"- **고용 구분 (현직 {len(active_members)}명)**: {emp_summary}",
+        "",
+        "## 갱신 방법",
+        "",
+        "```powershell",
+        "# JSON 수정 또는 가입/탈퇴 명령 후 마크다운 재성성",
+        "python scripts/manage_members.py export-md",
+        "```",
+        "",
+    ])
+    p_readme = out_dir / "README.md"
+    p_readme.write_text(readme_md, encoding="utf-8")
+
+    # 2. directory/members.md
+    mem_lines = [
+        "# 조합원 관리 명부",
+        "",
+        f"> 기준: `{now_str}` · 현직 `{len(active_members)}명` · 과거/비현역 `{len(former_members)}명` · 전체 `{len(members)}명`",
+        "",
+    ]
+    for code, heading in [("AY", "안양물류센터지부 (`AY`)"), ("BP", "부평물류센터지부 (`BP`)"), ("HQ", "본부 (`HQ`)")]:
+        sub = [m for m in active_members if m.get("unit_code") == code]
+        if not sub:
+            continue
+        sub_shift = Counter(m.get("shift") or "미지정" for m in sub)
+        sub_emp = Counter(m.get("employment_type") or "미지정" for m in sub)
+        mem_lines.extend([
+            f"## {heading} — {len(sub)}명",
+            "",
+            f"- **근무**: {' · '.join(f'{k} {v}' for k, v in sub_shift.items())}",
+            f"- **고용**: {' · '.join(f'{k} {v}' for k, v in sub_emp.items())}",
+            "",
+            "| ID | 성명 | 연락처 | 근무 | 고용 | 상태 | 비고 |",
+            "| :--- | :--- | :--- | :---: | :---: | :---: | :--- |",
+        ])
+        for m in sub:
+            mem_lines.append(
+                f"| `{m['person_id']}` | **{m['name']}** | {_md_cell(m.get('phone'))} | {_md_cell(m.get('shift'))} | {_md_cell(m.get('employment_type'))} | {m.get('status')} | {_md_cell(m.get('note'))} |"
+            )
+        mem_lines.append("")
+
+    if former_members:
+        mem_lines.extend([
+            f"## 과거·비현역 조합원 ({len(former_members)}명)",
+            "",
+            "| ID | 성명 | 소속 | 상태 | 가입일 | 탈퇴/종료일 | 비고 |",
+            "| :--- | :--- | :---: | :---: | :---: | :---: | :--- |",
+        ])
+        for m in former_members:
+            uc = m.get("unit_code") or ""
+            uname = unit_info.get(uc, {}).get("name", uc)
+            mem_lines.append(
+                f"| `{m['person_id']}` | **{m['name']}** | {uname} (`{uc}`) | {m.get('status')} | {_md_cell(m.get('joined_on'))} | {_md_cell(m.get('left_on'))} | {_md_cell(m.get('note'))} |"
+            )
+        mem_lines.append("")
+
+    mem_lines.extend([
+        f"## 변동 이력 로그 (최근 {min(len(events), 50)}건)",
+        "",
+        "| 이벤트 ID | 일자 | 대상 | 구분 | 이동 | 사유 |",
+        "| :--- | :---: | :--- | :--- | :---: | :--- |",
+    ])
+    for ev in reversed(events[-50:]):
+        pname = id_to_name.get(ev["person_id"], "")
+        move = f"{ev.get('from_unit') or '-'} → {ev.get('to_unit') or '-'}"
+        mem_lines.append(
+            f"| `{ev['event_id']}` | {ev['event_date']} | `{ev['person_id']}` {pname} | `{ev['event_type']}` | {move} | {_md_cell(ev.get('reason'))} |"
+        )
+    mem_lines.append("")
+    p_members = out_dir / "members.md"
+    p_members.write_text("\n".join(mem_lines), encoding="utf-8")
+
+    # 3. directory/external_people.md
+    ext_lines = [
+        "# 외부인 인명사전",
+        "",
+        f"> 기준: `{now_str}` · 본사·연대노조·상급단체 등 비조합원 `{len(externals)}명` (정식 성명만 원장에 표기)",
+        "",
+        "| ID | 성명 | 소속/기관 | 구분 | 연락처 | 상태 | 비고 |",
+        "| :--- | :--- | :--- | :---: | :--- | :---: | :--- |",
+    ]
+    for e in externals:
+        ext_lines.append(
+            f"| `{e['person_id']}` | **{e['name']}** | {_md_cell(e.get('org'))} | {_md_cell(e.get('category'))} | {_md_cell(e.get('phone'))} | {e.get('status')} | {_md_cell(e.get('note'))} |"
+        )
+    ext_lines.append("")
+    p_ext = out_dir / "external_people.md"
+    p_ext.write_text("\n".join(ext_lines), encoding="utf-8")
+
+    # 4. directory/title_rules.md
+    tokens = rules.get("strip_tokens", {})
+    aliases = rules.get("person_aliases", [])
+    roles = rules.get("person_roles", [])
+    rule_lines = [
+        "# 직책 · 별칭 · 제외 목록 관리 사전",
+        "",
+        f"> 기준: `{now_str}` · 현재 표시 모드: **`{rules.get('display_mode', 'name_only')}`** (원장·보고서는 정식 성명만 유지)",
+        "",
+        "## 1. 제외 목록 (이름 앞·뒤 결합 시 자동 제거)",
+        "",
+        f"- **존칭**: {', '.join(f'`{t}`' for t in tokens.get('honorifics', []))}",
+        f"- **수식어**: {', '.join(f'`{t}`' for t in tokens.get('modifiers', []))}",
+        f"- **직책·호칭**: {', '.join(f'`{t}`' for t in tokens.get('titles', []))}",
+        "",
+        f"## 2. 별칭 → 정식 성명 매핑 ({len(aliases)}건)",
+        "",
+        "| 별칭/약칭 표기 | 정식 성명 (`person_id`) | 매칭 방식 | 비고 |",
+        "| :--- | :--- | :---: | :--- |",
+    ]
+    for a in aliases:
+        formal = id_to_name.get(a["person_id"], "")
+        rule_lines.append(
+            f"| `{a['alias']}` | **{formal}** (`{a['person_id']}`) | `{a.get('match_mode', 'exact')}` | {_md_cell(a.get('note'))} |"
+        )
+    rule_lines.extend([
+        "",
+        f"## 3. 인물별 직책 매칭표 ({len(roles)}건 — 향후 출력 확장용 보관)",
+        "",
+        "| 규칙 ID | 성명 (`person_id`) | 소속/기관 | 직책 | 적용 시작 | 종료 | 비고 |",
+        "| :--- | :--- | :--- | :--- | :---: | :---: | :---: |",
+    ])
+    for r in roles:
+        formal = id_to_name.get(r["person_id"], "")
+        primary_note = "주 직책" if r.get("is_primary", True) else "겸직"
+        rule_lines.append(
+            f"| `{r['role_id']}` | **{formal}** (`{r['person_id']}`) | {_md_cell(r.get('org'))} | {r['title']} | {_md_cell(r.get('valid_from'))} | {_md_cell(r.get('valid_to'))} | {primary_note} |"
+        )
+    rule_lines.append("")
+    p_rules = out_dir / "title_rules.md"
+    p_rules.write_text("\n".join(rule_lines), encoding="utf-8")
+
+    return [p_readme, p_members, p_ext, p_rules]
+
+
+def cmd_export_md(args):
+    files = export_directory_markdown(Path(args.dir))
+    print(f"마크다운 사전 생성 완료 ({len(files)}개): {', '.join(f.name for f in files)} -> {args.dir}")
 
 
 def cmd_sync_privacy(_args):
@@ -540,6 +743,9 @@ def main():
 
     sub.add_parser("sync-privacy", help="members/external_people 기준으로 privacy.json 동기화")
 
+    p_md = sub.add_parser("export-md", help="사전들을 읽기 쉬운 마크다운(directory/*.md)으로 생성")
+    p_md.add_argument("--dir", default=str(DEFAULT_DIR_MD))
+
     p_db = sub.add_parser("export-sqlite", help="SQLite 로컬 DB 생성/동기화")
     p_db.add_argument("--db", default=str(DEFAULT_DB_PATH))
 
@@ -554,6 +760,7 @@ def main():
         "history": cmd_history,
         "add-external": cmd_add_external,
         "sync-privacy": cmd_sync_privacy,
+        "export-md": cmd_export_md,
         "export-sqlite": cmd_export_sqlite,
     }
     handlers[args.cmd](args)

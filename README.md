@@ -12,6 +12,7 @@ Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8
 | `config/members.json` | 조합원 관리 명부 (`members`, `membership_events` — 가입·탈퇴·이동 이력, Git 제외) |
 | `config/external_people.json` | 외부인 인명사전 (`external_people` — 본사·유관노조·상급단체, Git 제외) |
 | `config/title_rules.json` | 정식 성명 통일·제외 목록·별칭·직책 매칭 사전 (Git 제외) |
+| `directory/` | 사람용 마크다운 사전 뷰 (`members.md`, `external_people.md`, `title_rules.md` — Git 제외) |
 | `data/latest/` | 최신 동기화 스냅샷 (`ledger.xlsx`, 탭별 `.csv`, `ledger.json`, `sync_meta.json`) |
 | `data/local/accounting.db` | SQLite 1:1 내보내기 로컬 DB (`manage_members.py export-sqlite`, Git 제외) |
 | `data/snapshots/YYYY-MM-DD/` | 날짜별 `.xlsx` 백업 스냅샷 |
