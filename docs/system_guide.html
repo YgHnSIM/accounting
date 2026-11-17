@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<script>try{const s=localStorage.getItem("color-scheme");if(s==="dark"||s==="light"){document.querySelector('meta[name="color-scheme"]').content=s;}}catch(e){}</script>
+<title>시스템 아키텍처 &amp; 작동 원리 가이드 | 물류노동조합 회계·조합원 관리</title>
+<meta name="description" content="우체국물류지원단 물류노동조합 회계 원장, 개인정보 비식별, 조합원·서류 생애주기 및 GitHub Pages 자동 배포 시스템 설계 문서">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cpath fill='%23516DB2' d='M48.2 4L10 26v48l38.2 22V76.5L26.5 64V36l21.7-12.5z'/%3E%3Cpath fill='%230B051A' d='M51.8 4L90 26v48L51.8 96V76.5L73.5 64V36L51.8 23.5z'/%3E%3Cpath fill='%230B051A' d='M48.2 28.5L32 37.8l16.2 8.4z'/%3E%3Cpath fill='%23516DB2' d='M51.8 28.5L68 37.8l-16.2 8.4z'/%3E%3C/svg%3E">
+<style>
+  @property --fade-start {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+  @property --fade-end {
+    syntax: "<length>";
+    inherits: false;
+    initial-value: 0px;
+  }
+
+  :root {
+    color-scheme: light dark;
+    --canvas: light-dark(#f7f8fa, #0b0e17);
+    --sheet: light-dark(#ffffff, #121726);
+    --well: light-dark(#eef2fc, #192138);
+    --well-warm: light-dark(#faf5eb, #241f16);
+    --ink: light-dark(#0b051a, #f5f7fc);
+    --ink-2: light-dark(#1d2130, #d6def0);
+    --muted: light-dark(#4d5160, #9ba5c4);
+    --rule: light-dark(#d1d5e0, #293350);
+    --rule-strong: light-dark(#0b051a, #dce2f5);
+    --logo-blue: light-dark(#516db2, #7994de);
+    --accent: light-dark(#002fa7, #7fa2ff);
+    --accent-ink: light-dark(#ffffff, #07112b);
+    --accent-soft: light-dark(#eef2fc, #17254d);
+    --accent-soft-ink: light-dark(#00237d, #d2e0ff);
+    --income: light-dark(#146c53, #54d1a9);
+    --income-soft: light-dark(#e5f4ef, #122e26);
+    --expense: light-dark(#c24127, #f7907a);
+    --expense-soft: light-dark(#fcece8, #341d18);
+    --grant: light-dark(#8c5a00, #f0c265);
+    --grant-soft: light-dark(#faf2df, #2f2513);
+    --code-bg: light-dark(#f0f3fa, #0e1320);
+    --header-bg: light-dark(rgba(255, 255, 255, 0.94), rgba(18, 23, 38, 0.94));
+    --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --font-mono: ui-monospace, "Cascadia Mono", "Consolas", monospace;
+    --measure: 1160px;
+  }
+
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) {
+    color-scheme: dark;
+  }
+  :root:has(> head > meta[name="color-scheme"][content="light"]) {
+    color-scheme: light;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  body, h1, h2, h3, h4, p, ul, ol, dl, dd, figure, pre { margin: 0; }
+
+  html {
+    scroll-behavior: smooth;
+    accent-color: var(--accent);
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: 0.97rem;
+    line-height: 1.65;
+    background-color: var(--canvas);
+    color: var(--ink-2);
+    word-break: keep-all;
+  }
+
+  a { color: var(--accent); text-underline-offset: 0.18em; }
+
+  .skip-link {
+    position: absolute;
+    inset-block-start: -100px;
+    inset-inline-start: 1rem;
+    padding: 0.5rem 0.9rem;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border-radius: 4px;
+    font-weight: 700;
+    text-decoration: none;
+    z-index: 200;
+  }
+  .skip-link:focus { inset-block-start: 0.75rem; }
+
+  /* Header */
+  .site-header {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 100;
+    background-color: var(--header-bg);
+    backdrop-filter: blur(8px);
+    border-block-end: 1px solid var(--rule);
+  }
+
+  .header-inner {
+    max-inline-size: var(--measure);
+    margin-inline: auto;
+    padding: 0.65rem clamp(1rem, 3vw, 2rem);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .brand svg { inline-size: 28px; block-size: 28px; flex-shrink: 0; }
+
+  .header-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-wrap: wrap;
+  }
+
+  .header-links {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+  }
+
+  .header-links a {
+    display: inline-block;
+    padding: 0.35rem 0.65rem;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted);
+    text-decoration: none;
+  }
+  .header-links a:hover { background-color: var(--well); color: var(--ink); }
+
+  .theme-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.38rem 0.72rem;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background-color: var(--sheet);
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .theme-btn:hover { background-color: var(--well); border-color: var(--accent); }
+  .theme-btn svg { inline-size: 15px; block-size: 15px; }
+  .theme-btn .opt-light { display: none; }
+  .theme-btn .opt-dark { display: inline-flex; align-items: center; gap: 0.32rem; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-btn .opt-dark { display: none; }
+    :root:not(:has(> head > meta[name="color-scheme"][content="light"])) .theme-btn .opt-light { display: inline-flex; align-items: center; gap: 0.32rem; }
+  }
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-btn .opt-dark { display: none; }
+  :root:has(> head > meta[name="color-scheme"][content="dark"]) .theme-btn .opt-light { display: inline-flex; align-items: center; gap: 0.32rem; }
+
+  /* Layout */
+  .main-wrap {
+    max-inline-size: var(--measure);
+    margin-inline: auto;
+    padding: 1.5rem clamp(1rem, 3vw, 2rem) 3rem;
+  }
+
+  .hero {
+    background-color: var(--sheet);
+    border: 1px solid var(--rule);
+    border-block-start: 4px solid var(--accent);
+    border-radius: 6px;
+    padding: clamp(1.1rem, 3vw, 1.85rem);
+    margin-block-end: 1.5rem;
+  }
+
+  .eyebrow {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--accent-soft-ink);
+    background-color: var(--accent-soft);
+    padding: 0.18rem 0.55rem;
+    border-radius: 3px;
+    margin-block-end: 0.65rem;
+  }
+
+  h1 {
+    font-size: clamp(1.4rem, 2.8vw, 1.95rem);
+    line-height: 1.28;
+    color: var(--ink);
+    margin-block-end: 0.55rem;
+  }
+
+  .hero-lead {
+    color: var(--muted);
+    font-size: 0.98rem;
+    max-inline-size: 74ch;
+  }
+
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+    margin-block-start: 1.25rem;
+  }
+
+  .kpi {
+    background-color: var(--well);
+    border: 1px solid var(--rule);
+    border-inline-start: 3px solid var(--logo-blue);
+    border-radius: 4px;
+    padding: 0.65rem 0.85rem;
+  }
+  .kpi[data-tone="income"] { border-inline-start-color: var(--income); }
+  .kpi[data-tone="expense"] { border-inline-start-color: var(--expense); }
+  .kpi[data-tone="grant"] { border-inline-start-color: var(--grant); }
+
+  .kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
+  .kpi-val {
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    margin-block: 0.1rem;
+  }
+  .kpi-sub { font-size: 0.74rem; color: var(--muted); }
+
+  /* Sections */
+  section.band {
+    margin-block-start: 2rem;
+  }
+
+  .sec-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.4rem 1rem;
+    border-block-end: 2px solid var(--rule-strong);
+    padding-block-end: 0.45rem;
+    margin-block-end: 1rem;
+  }
+
+  h2 {
+    font-size: 1.2rem;
+    color: var(--ink);
+  }
+  .sec-sub { font-size: 0.82rem; color: var(--muted); }
+
+  h3 {
+    font-size: 1.02rem;
+    color: var(--ink);
+    margin-block-end: 0.45rem;
+  }
+
+  .sheet-card {
+    background-color: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: clamp(0.95rem, 2.5vw, 1.35rem);
+  }
+
+  .grid-2 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+    gap: 1rem;
+  }
+
+  .grid-3 {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+    gap: 0.9rem;
+  }
+
+  /* Diagrams */
+  figure.diagram-box {
+    background-color: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 1rem;
+    overflow: hidden;
+  }
+
+  .diagram-scroll {
+    overflow-x: auto;
+    padding-block: 0.25rem;
+  }
+
+  figure.diagram-box svg {
+    display: block;
+    inline-size: 100%;
+    min-inline-size: 720px;
+    block-size: auto;
+    font-family: var(--font-sans);
+  }
+
+  figure.diagram-box figcaption {
+    margin-block-start: 0.75rem;
+    padding-block-start: 0.55rem;
+    border-block-start: 1px solid var(--rule);
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  /* Badges & Tags */
+  .badge {
+    display: inline-block;
+    font-size: 0.74rem;
+    font-weight: 700;
+    padding: 0.12rem 0.45rem;
+    border-radius: 3px;
+    vertical-align: middle;
+  }
+  .badge.private { background: var(--expense-soft); color: var(--expense); }
+  .badge.public { background: var(--income-soft); color: var(--income); }
+  .badge.accent { background: var(--accent-soft); color: var(--accent-soft-ink); }
+  .badge.grant { background: var(--grant-soft); color: var(--grant); }
+
+  /* Tabs (following modern-web-guidance: focusgroup, hidden=until-found, inner panel wrapper) */
+  .tablist {
+    display: flex;
+    gap: 0.25rem;
+    overflow-x: auto;
+    border-block-end: 1px solid var(--rule);
+    margin-block-end: 0.9rem;
+    scrollbar-width: none;
+    scroll-snap-type: inline proximity;
+    --fade-size: 2rem;
+    --fade-dir: right;
+    --fade-start-pos: 0;
+    --fade-end-pos: 100%;
+    mask:
+      linear-gradient(black, black) no-clip subtract,
+      linear-gradient(to var(--fade-dir), black, transparent) var(--fade-start-pos) 0 / var(--fade-start) 100% no-repeat no-clip,
+      linear-gradient(to var(--fade-dir), transparent, black) var(--fade-end-pos) 0 / var(--fade-end) 100% no-repeat no-clip;
+    animation: reveal-fade-start linear both, hide-fade-end linear both;
+    animation-timeline: scroll(self inline);
+    animation-range: 0 var(--fade-size), calc(100% - var(--fade-size)) 100%;
+  }
+  .tablist::-webkit-scrollbar { display: none; }
+  .tablist.more-start { --fade-start: var(--fade-size); }
+  .tablist.more-end { --fade-end: var(--fade-size); }
+
+  @keyframes reveal-fade-start { to { --fade-start: var(--fade-size); } }
+  @keyframes hide-fade-end { from { --fade-end: var(--fade-size); } }
+
+  .tablist button {
+    position: relative;
+    flex: none;
+    scroll-snap-align: start;
+    padding: 0.62rem 0.95rem;
+    background: transparent;
+    border: 0;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--muted);
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .tablist button:hover { color: var(--ink); background-color: var(--well); }
+  .tablist button[aria-selected="true"] {
+    color: var(--accent);
+  }
+  .tablist button[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0;
+    border-block-end: 3px solid var(--accent);
+  }
+
+  .tab-panels {
+    display: grid;
+  }
+  .tab-panels > [role="tabpanel"] {
+    grid-area: 1 / 1;
+    min-inline-size: 0;
+  }
+  .panel-inner {
+    background-color: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: clamp(0.95rem, 2.5vw, 1.35rem);
+  }
+
+  /* Tables & Code */
+  .table-wrap {
+    overflow-x: auto;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: var(--sheet);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  th, td {
+    padding: 0.55rem 0.72rem;
+    border-block-end: 1px solid var(--rule);
+    text-align: start;
+    vertical-align: top;
+  }
+  thead th {
+    background-color: var(--well);
+    color: var(--ink);
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  tbody tr:last-child td { border-block-end: 0; }
+
+  code {
+    font-family: var(--font-mono);
+    font-size: 0.84em;
+    background-color: var(--code-bg);
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    color: var(--ink);
+  }
+
+  pre {
+    background-color: var(--code-bg);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    padding: 0.85rem 1rem;
+    overflow-x: auto;
+    font-size: 0.82rem;
+    line-height: 1.55;
+  }
+  pre code { background: transparent; padding: 0; font-size: inherit; }
+
+  /* Accordions */
+  details {
+    background-color: var(--sheet);
+    border: 1px solid var(--rule);
+    border-radius: 5px;
+    margin-block-end: 0.6rem;
+  }
+  summary {
+    padding: 0.72rem 1rem;
+    font-weight: 700;
+    color: var(--ink);
+    cursor: pointer;
+    list-style-position: inside;
+  }
+  summary:hover { background-color: var(--well); }
+  .details-body {
+    padding: 0.25rem 1rem 0.95rem;
+    border-block-start: 1px solid var(--rule);
+  }
+
+  .step-list {
+    padding-inline-start: 1.25rem;
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .callout {
+    background-color: var(--well-warm);
+    border: 1px solid var(--rule);
+    border-inline-start: 4px solid var(--grant);
+    border-radius: 4px;
+    padding: 0.75rem 0.95rem;
+    font-size: 0.88rem;
+  }
+
+  footer {
+    max-inline-size: var(--measure);
+    margin-inline: auto;
+    padding: 1.25rem clamp(1rem, 3vw, 2rem) 2.5rem;
+    border-block-start: 1px solid var(--rule);
+    font-size: 0.82rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  @media (forced-colors: active) {
+    .tablist button[aria-selected="true"]::after { border-block-end-color: Highlight; }
+    .kpi, .hero { border-color: CanvasText; }
+  }
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="../_site/index.html">
+      <svg aria-hidden="true" viewBox="0 0 100 100">
+        <path fill="var(--logo-blue)" d="M48.2 4L10 26v48l38.2 22V76.5L26.5 64V36l21.7-12.5z"/>
+        <path fill="var(--ink)" d="M51.8 4L90 26v48L51.8 96V76.5L73.5 64V36L51.8 23.5z"/>
+        <path fill="var(--ink)" d="M48.2 28.5L32 37.8l16.2 8.4z"/>
+        <path fill="var(--logo-blue)" d="M51.8 28.5L68 37.8l-16.2 8.4z"/>
+      </svg>
+      <span>물류노동조합 통합 회계·조합원 관리 아키텍처</span>
+    </a>
+
+    <nav class="header-nav" aria-label="문서 탐색">
+      <ul class="header-links">
+        <li><a href="#sec-overview">전체 구조</a></li>
+        <li><a href="#sec-engines">핵심 작동 원리</a></li>
+        <li><a href="#sec-dirs">폴더·파일 지도</a></li>
+        <li><a href="#sec-cli">실무 명령어</a></li>
+      </ul>
+      <button id="theme-toggle" class="theme-btn" type="button" aria-pressed="false" aria-label="라이트·다크 테마 전환">
+        <span class="opt-dark">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+          <span>다크</span>
+        </span>
+        <span class="opt-light">
+          <svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+          <span>라이트</span>
+        </span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="main-content" class="main-wrap">
+  <section class="hero" aria-labelledby="page-title">
+    <span class="eyebrow">SYSTEM ARCHITECTURE GUIDE · 2026-11</span>
+    <h1 id="page-title">회계 공개 대시보드 · 비식별 파이프라인 · 조합원 생애주기 시스템</h1>
+    <p class="hero-lead">
+      Google Sheets 통합 원장과 원본 PDF·가입서를 로컬에서 검증·정제하고, 개인 실명과 연락처를 완전히 비식별화한 정적 웹(GitHub Pages)과 내부 회의용 보고서, SQLite 로컬 DB까지 단일 파이프라인으로 운영하는 시스템 설명서입니다.
+    </p>
+
+    <div class="kpi-row" role="region" aria-label="시스템 구성 지표">
+      <div class="kpi">
+        <div class="kpi-label">원장 거래 / 회계기간</div>
+        <div class="kpi-val">509건</div>
+        <div class="kpi-sub">2023-01 ~ 2026-09 (47개 계정)</div>
+      </div>
+      <div class="kpi" data-tone="income">
+        <div class="kpi-label">공개 웹 보고서</div>
+        <div class="kpi-val">49건</div>
+        <div class="kpi-sub">연간 4건 · 월간 45건 자동 빌드</div>
+      </div>
+      <div class="kpi" data-tone="grant">
+        <div class="kpi-label">조합원 · 외부인</div>
+        <div class="kpi-val">67 / 5명</div>
+        <div class="kpi-sub">현직 61명(AY 33·BP 27·HQ 1) · 비현역 6명</div>
+      </div>
+      <div class="kpi" data-tone="expense">
+        <div class="kpi-label">SQLite 테이블</div>
+        <div class="kpi-val">10개</div>
+        <div class="kpi-sub">JSON ↔ SQLite 무손실 매핑</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Overall Dataflow Diagram -->
+  <section id="sec-overview" class="band" aria-labelledby="h-overview">
+    <div class="sec-head">
+      <h2 id="h-overview">1. 전체 아키텍처 &amp; 개인정보 경계선</h2>
+      <span class="sec-sub">민감 원본은 로컬(.gitignore)에 가두고, 검증·비식별된 결과물만 공개 GitHub Pages로 내보냅니다.</span>
+    </div>
+
+    <figure class="diagram-box">
+      <div class="diagram-scroll">
+        <svg viewBox="0 0 980 430" role="img" aria-labelledby="svg-arch-title svg-arch-desc">
+          <title id="svg-arch-title">회계·조합원 관리 시스템 전체 아키텍처</title>
+          <desc id="svg-arch-desc">좌측 로컬 전용 영역의 원본 PDF, 가입서, 엑셀 원장, 조합원 사전을 중앙 파이썬 검증·비식별 엔진이 처리해 내부 보고서·SQLite DB와 우측 공개 GitHub Pages 대시보드로 분리 출력하는 흐름도</desc>
+          <defs>
+            <marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9 z" fill="var(--accent)"/>
+            </marker>
+            <marker id="arr-muted" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+              <path d="M0,1 L9,5 L0,9 z" fill="var(--logo-blue)"/>
+            </marker>
+          </defs>
+
+          <!-- Zone Backgrounds -->
+          <rect x="12" y="14" width="320" height="402" rx="8" fill="var(--well)" stroke="var(--expense)" stroke-width="1.5" stroke-dasharray="5 4"/>
+          <text x="26" y="38" font-size="13" font-weight="800" fill="var(--expense)">🔒 로컬 전용 (.gitignore · 비공개)</text>
+
+          <rect x="356" y="14" width="276" height="402" rx="8" fill="var(--sheet)" stroke="var(--accent)" stroke-width="1.8"/>
+          <text x="370" y="38" font-size="13" font-weight="800" fill="var(--accent)">⚙ 검증 · 정규화 · 비식별 엔진</text>
+
+          <rect x="656" y="14" width="312" height="402" rx="8" fill="var(--income-soft)" stroke="var(--income)" stroke-width="1.8"/>
+          <text x="670" y="38" font-size="13" font-weight="800" fill="var(--income)">🌐 공개 웹 (GitHub · 비식별)</text>
+
+          <!-- Privacy Firewall Line -->
+          <line x1="644" y1="22" x2="644" y2="408" stroke="var(--expense)" stroke-width="2" stroke-dasharray="6 4"/>
+
+          <!-- Left Zone Nodes -->
+          <rect x="28" y="54" width="288" height="68" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="42" y="76" font-size="12.5" font-weight="700" fill="var(--ink)">1. 회계 원본 데이터</text>
+          <text x="42" y="95" font-size="11" fill="var(--muted)">• Google Sheets &amp; data/latest/ledger.xlsx</text>
+          <text x="42" y="111" font-size="11" fill="var(--muted)">• _raw/{HQ,AY,BP,SS}/*.pdf (실명 포함)</text>
+
+          <rect x="28" y="136" width="288" height="84" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="42" y="158" font-size="12.5" font-weight="700" fill="var(--ink)">2. 3종 분리 사전 &amp; 비식별 규칙</text>
+          <text x="42" y="177" font-size="11" fill="var(--muted)">• config/members.json (67명 · 가입/탈퇴 이력)</text>
+          <text x="42" y="193" font-size="11" fill="var(--muted)">• external_people.json · title_rules.json</text>
+          <text x="42" y="209" font-size="11" fill="var(--muted)">• privacy.json (금지어 103개 · 치환 규칙)</text>
+
+          <rect x="28" y="234" width="288" height="72" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="42" y="256" font-size="12.5" font-weight="700" fill="var(--ink)">3. 가입·탈퇴 증빙 &amp; 열람용 MD</text>
+          <text x="42" y="275" font-size="11" fill="var(--muted)">• _raw/applications/*.jpg + JOIN/WITHDRAW.md</text>
+          <text x="42" y="291" font-size="11" fill="var(--muted)">• directory/{members,external,title_rules}.md</text>
+
+          <rect x="28" y="320" width="288" height="80" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="42" y="342" font-size="12.5" font-weight="700" fill="var(--ink)">4. 내부 전용 결과물 (실명·정식성명)</text>
+          <text x="42" y="361" font-size="11" fill="var(--muted)">• reports/{monthly,annual}/*.html (회의용)</text>
+          <text x="42" y="377" font-size="11" fill="var(--muted)">• data/local/accounting.db (SQLite 10테이블)</text>
+          <text x="42" y="393" font-size="11" fill="var(--muted)">• data/snapshots/ (일별 백업)</text>
+
+          <!-- Middle Zone Nodes -->
+          <rect x="372" y="54" width="244" height="78" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+          <text x="386" y="76" font-size="12.5" font-weight="700" fill="var(--ink)">people_utils.py</text>
+          <text x="386" y="95" font-size="11" fill="var(--muted)">• 약칭 → 정식 성명 통일</text>
+          <text x="386" y="111" font-size="11" fill="var(--muted)">• 존칭·수식어·직책 제거</text>
+          <text x="386" y="126" font-size="10.5" fill="var(--accent)">• privacy.json 자동 동기화</text>
+
+          <rect x="372" y="146" width="244" height="78" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+          <text x="386" y="168" font-size="12.5" font-weight="700" fill="var(--ink)">build_reports.py</text>
+          <text x="386" y="187" font-size="11" fill="var(--muted)">• XLSX → CSV · ledger.json 변환</text>
+          <text x="386" y="203" font-size="11" fill="var(--muted)">• COA(47계정)·누적잔액 검증</text>
+          <text x="386" y="218" font-size="10.5" fill="var(--accent)">• 내부 보고서 &amp; PNG 차트 생성</text>
+
+          <rect x="372" y="238" width="244" height="78" rx="5" fill="var(--well)" stroke="var(--accent)"/>
+          <text x="386" y="260" font-size="12.5" font-weight="700" fill="var(--ink)">build_site.py + validate_site.py</text>
+          <text x="386" y="279" font-size="11" fill="var(--muted)">• 실명·전화·이메일 전수 마스킹</text>
+          <text x="386" y="295" font-size="11" fill="var(--muted)">• ledger_public.json + _site/ 빌드</text>
+          <text x="386" y="310" font-size="10.5" fill="var(--expense)">• 유출 0건 · 수식오류 · 링크 검증</text>
+
+          <rect x="372" y="330" width="244" height="70" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+          <text x="386" y="352" font-size="12.5" font-weight="700" fill="var(--ink)">manage_members.py</text>
+          <text x="386" y="371" font-size="11" fill="var(--muted)">• 가입·탈퇴·재가입·이동 CLI</text>
+          <text x="386" y="387" font-size="11" fill="var(--muted)">• 서류 MD · directory · SQLite 내보내기</text>
+
+          <!-- Right Zone Nodes -->
+          <rect x="672" y="54" width="280" height="76" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="686" y="76" font-size="12.5" font-weight="700" fill="var(--ink)">Git 추적 공개 데이터 &amp; 마스터</text>
+          <text x="686" y="95" font-size="11" fill="var(--muted)">• data/public/ledger_public.json</text>
+          <text x="686" y="111" font-size="11" fill="var(--muted)">• config/coa.json · config/units.json</text>
+          <text x="686" y="125" font-size="10.5" fill="var(--income)">실명 · 휴대전화 · 이메일 0건 검증됨</text>
+
+          <rect x="672" y="146" width="280" height="82" rx="5" fill="var(--sheet)" stroke="var(--rule)"/>
+          <text x="686" y="168" font-size="12.5" font-weight="700" fill="var(--ink)">GitHub Actions 자동 배포</text>
+          <text x="686" y="187" font-size="11" fill="var(--muted)">• .github/workflows/pages.yml</text>
+          <text x="686" y="203" font-size="11" fill="var(--muted)">• python scripts/build_site.py --ci</text>
+          <text x="686" y="219" font-size="11" fill="var(--muted)">• python scripts/validate_site.py</text>
+
+          <rect x="672" y="244" width="280" height="156" rx="5" fill="var(--sheet)" stroke="var(--accent)" stroke-width="1.5"/>
+          <text x="686" y="268" font-size="12.5" font-weight="800" fill="var(--accent)">yghnsim.github.io/accounting/</text>
+          <text x="686" y="290" font-size="11" fill="var(--ink-2)">• index.html: 금년 기본 대시보드 · 미니맵</text>
+          <text x="686" y="308" font-size="11" fill="var(--ink-2)">• ledger.html: 거래 탐색기 · CSV 내려받기</text>
+          <text x="686" y="326" font-size="11" fill="var(--ink-2)">• reports/: 월간(45)·연간(4) 아카이브</text>
+          <text x="686" y="344" font-size="11" fill="var(--ink-2)">• coa.html: 3단계 계정과목·회계기준</text>
+          <text x="686" y="368" font-size="10.5" fill="var(--muted)">클라인 블루(#002FA7) · 라이트/다크 전환</text>
+          <text x="686" y="384" font-size="10.5" fill="var(--muted)">모바일 스와이프 차트 · 카드형 테이블</text>
+
+          <!-- Arrows -->
+          <line x1="316" y1="88" x2="370" y2="176" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+          <line x1="316" y1="176" x2="370" y2="94" stroke="var(--logo-blue)" stroke-width="1.6" marker-end="url(#arr-muted)"/>
+          <line x1="494" y1="132" x2="494" y2="144" stroke="var(--logo-blue)" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+          <line x1="494" y1="224" x2="494" y2="236" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+          <line x1="372" y1="205" x2="318" y2="345" stroke="var(--logo-blue)" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+          <line x1="372" y1="365" x2="318" y2="275" stroke="var(--logo-blue)" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+          <line x1="372" y1="382" x2="318" y2="382" stroke="var(--logo-blue)" stroke-width="1.5" marker-end="url(#arr-muted)"/>
+          <line x1="616" y1="268" x2="670" y2="96" stroke="var(--accent)" stroke-width="1.7" marker-end="url(#arr)"/>
+          <line x1="812" y1="130" x2="812" y2="144" stroke="var(--accent)" stroke-width="1.7" marker-end="url(#arr)"/>
+          <line x1="812" y1="228" x2="812" y2="242" stroke="var(--accent)" stroke-width="1.7" marker-end="url(#arr)"/>
+        </svg>
+      </div>
+      <figcaption>
+        <span class="badge private">비공개 로컬</span> 원본 문서와 조합원 인명사전은 로컬에만 보관하고, <span class="badge public">공개 웹</span> GitHub Actions는 비식별 처리가 끝난 <code>ledger_public.json</code>과 마스터 기준표만으로 정적 HTML을 빌드합니다.
+      </figcaption>
+    </figure>
+  </section>
+
+  <!-- Section 2: Interactive 4 Tabs Explaining Core Subsystems -->
+  <section id="sec-engines" class="band" aria-labelledby="h-engines">
+    <div class="sec-head">
+      <h2 id="h-engines">2. 하위 시스템별 작동 원리</h2>
+      <span class="sec-sub">탭을 전환해 각 엔진의 데이터 처리 흐름과 규칙을 확인하세요 (페이지 내 검색 <code>Ctrl+F</code> 전체 탭 지원)</span>
+    </div>
+
+    <div class="tabs-shell">
+      <div class="tablist" focusgroup="tablist nomemory" aria-label="핵심 하위 시스템 설명">
+        <button type="button" id="tab-acc" aria-selected="true" focusgroupstart>① 회계 원장 · 3단계 계정</button>
+        <button type="button" id="tab-pii" aria-selected="false">② 정식 성명 · 비식별 엔진</button>
+        <button type="button" id="tab-mem" aria-selected="false">③ 조합원 생애주기 · 서류</button>
+        <button type="button" id="tab-db" aria-selected="false">④ SQLite DB · 웹 UI 설계</button>
+      </div>
+
+      <div class="tab-panels">
+        <!-- Tab 1: Accounting -->
+        <div role="tabpanel" aria-labelledby="tab-acc" tabindex="0">
+          <div class="panel-inner">
+            <h3>복수 회계단위 통합과 <code>내부이전</code> 이중계산 방지 원리</h3>
+            <p style="margin-block-end:0.9rem;">
+              노동조합 재정은 중앙 <strong>본부(<code>HQ</code>)</strong>와 현장 지부(<strong>안물 <code>AY</code> · 부평물 <code>BP</code> · 폐지 서물 <code>SS</code></strong>)로 나뉘며, 본부에서 지부로 교부금을 내려보내거나 잔여금을 회수할 때 총액이 부풀려지지 않도록 거래 구분을 엄격히 분리합니다.
+            </p>
+
+            <figure class="diagram-box" style="margin-block-end:1rem;">
+              <div class="diagram-scroll">
+                <svg viewBox="0 0 880 205" role="img" aria-labelledby="svg-acc-t">
+                  <title id="svg-acc-t">회계 거래 구분 및 잔액 검증 구조</title>
+                  <rect x="14" y="20" width="180" height="165" rx="6" fill="var(--well)" stroke="var(--rule)"/>
+                  <text x="28" y="44" font-size="12" font-weight="700" fill="var(--ink)">단위별 원장 입력</text>
+                  <text x="28" y="68" font-size="11" fill="var(--muted)">• 원장_본부 (HQ)</text>
+                  <text x="28" y="88" font-size="11" fill="var(--muted)">• 원장_안물 (AY)</text>
+                  <text x="28" y="108" font-size="11" fill="var(--muted)">• 원장_부평물 (BP)</text>
+                  <text x="28" y="128" font-size="11" fill="var(--muted)">• 서물(SS) 폐지 보존</text>
+                  <text x="28" y="160" font-size="10.5" fill="var(--accent)">통합원장 509건 집계</text>
+
+                  <line x1="194" y1="102" x2="232" y2="102" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="236" y="20" width="380" height="165" rx="6" fill="var(--sheet)" stroke="var(--accent)"/>
+                  <text x="252" y="44" font-size="12" font-weight="800" fill="var(--accent)">6종 거래 구분 + 3단계 계정(관·항·목) 검증</text>
+                  <rect x="252" y="58" width="168" height="32" rx="4" fill="var(--income-soft)"/>
+                  <text x="262" y="78" font-size="11" font-weight="700" fill="var(--income)">수입: 외부 유입 (조합비·찬조)</text>
+                  <rect x="432" y="58" width="168" height="32" rx="4" fill="var(--expense-soft)"/>
+                  <text x="442" y="78" font-size="11" font-weight="700" fill="var(--expense)">지출: 외부 순사업비 집행</text>
+                  <rect x="252" y="98" width="348" height="34" rx="4" fill="var(--grant-soft)"/>
+                  <text x="262" y="119" font-size="11" font-weight="700" fill="var(--grant)">내부이전(전출/전입): 본부↔지부 교부·환수 → 통합 시 상계</text>
+                  <text x="252" y="152" font-size="10.5" fill="var(--muted)">• 기초이월(2022.12) + 이월차액(통장실잔액 조정) 포함</text>
+                  <text x="252" y="170" font-size="10.5" fill="var(--ink-2)">• 단위별 누적잔액 전수 검산 (불일치 1원 발생 시 빌드 즉시 중단)</text>
+
+                  <line x1="616" y1="102" x2="652" y2="102" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="656" y="20" width="210" height="165" rx="6" fill="var(--well)" stroke="var(--rule)"/>
+                  <text x="670" y="44" font-size="12" font-weight="700" fill="var(--ink)">이원화 출력</text>
+                  <text x="670" y="72" font-size="11" font-weight="700" fill="var(--ink-2)">1) 내부 보고서 (실명)</text>
+                  <text x="670" y="90" font-size="10.5" fill="var(--muted)">• 월간 운영위 보고 (3개월 추이)</text>
+                  <text x="670" y="106" font-size="10.5" fill="var(--muted)">• 연간 대의원대회 결산 + PNG</text>
+                  <text x="670" y="136" font-size="11" font-weight="700" fill="var(--income)">2) 공개 웹 (_site/)</text>
+                  <text x="670" y="154" font-size="10.5" fill="var(--muted)">• 정적 JSON 기반 실시간 필터</text>
+                  <text x="670" y="170" font-size="10.5" fill="var(--muted)">• 4종 정적 보고서 + 탐색기</text>
+                </svg>
+              </div>
+            </figure>
+
+            <div class="grid-2">
+              <div class="sheet-card">
+                <h3>3단계 계정과목 체계 (47개 계정)</h3>
+                <ul class="step-list">
+                  <li><strong>관(대분류)</strong>: 수입 3대 관 · 지출 5대 관(<code>운영비</code>, <code>교섭·투쟁·권익비</code>, <code>조직·교육비</code>, <code>조합원복지·연대비</code>, <code>조정·환급</code>) · <code>내부이전</code> · <code>기초이월</code></li>
+                  <li><strong>항(중분류) · 목(세부활동)</strong>: 사업 목적과 구체적 활동을 1:1로 연결하고, <code>지출형태</code>(식대·인쇄·선물 등 10종)를 보조 축으로 분석합니다.</li>
+                  <li><strong>재원 구분</strong>: 통상 활동(<code>일반회계</code>)과 목적 모금(<code>특별모금·찬조</code>)을 분리 집계합니다.</li>
+                </ul>
+              </div>
+              <div class="sheet-card">
+                <h3>수식·회계 무결성 자동 검증</h3>
+                <ul class="step-list">
+                  <li>Google Sheets에서 내려받은 <code>ledger.xlsx</code>의 <code>#REF!</code>, <code>#NAME?</code> 등 엑셀 수식 오류를 가장 먼저 차단합니다.</li>
+                  <li>모든 거래는 <code>config/coa.json</code>에 등록된 47개 계정과목과 <code>지출형태</code> 마스터에 정확히 일치해야 통과합니다.</li>
+                  <li>행마다 계산한 누적 잔액과 시트 잔액(<code>unit_bal</code>)을 전수 대조해 <code>본부 1,581,075원</code> 기준 무오류를 보장합니다.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: People & Privacy Engine -->
+        <div role="tabpanel" aria-labelledby="tab-pii" hidden="until-found">
+          <div class="panel-inner">
+            <h3>약칭 → 정식 성명 통일 및 2단계 비식별 필터</h3>
+            <p style="margin-block-end:0.9rem;">
+              원장에 뒤섞여 있던 공백, 성 생략 호칭, 직책, 존칭을 <code>title_rules.json</code> 규칙에 따라 내부 데이터에서는 <strong>순수 정식 성명만</strong> 남기도록 정리하고, 공개 웹으로 나갈 때는 등록된 모든 실명·전화번호·이메일을 완전히 가립니다.
+            </p>
+
+            <figure class="diagram-box" style="margin-block-end:1rem;">
+              <div class="diagram-scroll">
+                <svg viewBox="0 0 880 215" role="img" aria-labelledby="svg-pii-t">
+                  <title id="svg-pii-t">인명 정규화 및 비식별 파이프라인</title>
+                  <rect x="14" y="24" width="196" height="168" rx="6" fill="var(--well)" stroke="var(--rule)"/>
+                  <text x="26" y="48" font-size="12" font-weight="700" fill="var(--ink)">원본 입력 문자열 예시</text>
+                  <text x="26" y="76" font-size="11" fill="var(--muted)">• "홍 길 동" (명부 공백)</text>
+                  <text x="26" y="98" font-size="11" fill="var(--muted)">• "OO 반장" (약칭+직책)</text>
+                  <text x="26" y="120" font-size="11" fill="var(--muted)">• "OOO 전 위원장님"</text>
+                  <text x="26" y="142" font-size="11" fill="var(--muted)">• "처장 OOO / OOO- 실장"</text>
+                  <text x="26" y="168" font-size="10.5" fill="var(--grant)">※ 일반 명사("신규 조합원") 보호</text>
+
+                  <line x1="210" y1="108" x2="244" y2="108" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="248" y="24" width="224" height="168" rx="6" fill="var(--sheet)" stroke="var(--accent)"/>
+                  <text x="262" y="48" font-size="12" font-weight="800" fill="var(--accent)">Step 1~3 · people_utils.py</text>
+                  <text x="262" y="74" font-size="11" font-weight="700" fill="var(--ink)">① 별칭 → 정식 성명 해소</text>
+                  <text x="262" y="91" font-size="10.5" fill="var(--muted)">exact·문맥(context_title) 매칭</text>
+                  <text x="262" y="116" font-size="11" font-weight="700" fill="var(--ink)">② 이름 앞뒤 제외 목록 박리</text>
+                  <text x="262" y="133" font-size="10.5" fill="var(--muted)">존칭·수식어(전/신임)·내외 직책</text>
+                  <text x="262" y="158" font-size="11" font-weight="700" fill="var(--ink)">③ 직책 정보 별도 보관</text>
+                  <text x="262" y="175" font-size="10.5" fill="var(--muted)">title_rules.json (기간별 직책)</text>
+
+                  <line x1="472" y1="68" x2="516" y2="68" stroke="var(--logo-blue)" stroke-width="1.6" marker-end="url(#arr-muted)"/>
+                  <line x1="472" y1="148" x2="516" y2="148" stroke="var(--income)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="520" y="24" width="164" height="80" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+                  <text x="532" y="46" font-size="11.5" font-weight="700" fill="var(--ink)">내부 원장·보고서</text>
+                  <text x="532" y="66" font-size="11" fill="var(--ink-2)">→ 정식 성명 단독 표기</text>
+                  <text x="532" y="84" font-size="10" fill="var(--muted)">직책·존칭 0건 통일</text>
+
+                  <rect x="520" y="114" width="164" height="78" rx="5" fill="var(--sheet)" stroke="var(--income)"/>
+                  <text x="532" y="136" font-size="11.5" font-weight="700" fill="var(--income)">비식별 치환 단계</text>
+                  <text x="532" y="156" font-size="10.5" fill="var(--muted)">exactNoteReplacements</text>
+                  <text x="532" y="174" font-size="10.5" fill="var(--muted)">+ 금지어 → "관계자/개인"</text>
+
+                  <line x1="684" y1="153" x2="716" y2="153" stroke="var(--income)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="720" y="114" width="146" height="78" rx="5" fill="var(--income-soft)" stroke="var(--income)"/>
+                  <text x="732" y="136" font-size="11.5" font-weight="800" fill="var(--income)">validate_site.py</text>
+                  <text x="732" y="155" font-size="10.5" fill="var(--ink-2)">• 실명 100+종 0건</text>
+                  <text x="732" y="172" font-size="10.5" fill="var(--ink-2)">• 전화·이메일 0건</text>
+                </svg>
+              </div>
+            </figure>
+
+            <div class="callout">
+              <strong>일반 단어 오삭제 방지 장치</strong>: 제외 목록(<code>반장</code>, <code>단장</code>, <code>전</code>, <code>신임</code>, <code>조합원</code> 등)을 무조건 텍스트 전체에서 지우지 않고, <strong>사전에 등록된 실명 앞뒤 경계(<code>(?&lt;![가-힣])</code>)</strong>와 결합된 경우에만 제거해 <code>신규조합원 간담회</code>, <code>전년 대비</code> 같은 정상 회계 용어를 안전하게 지킵니다.
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Member Lifecycle & Applications -->
+        <div role="tabpanel" aria-labelledby="tab-mem" hidden="until-found">
+          <div class="panel-inner">
+            <h3>조합원 가입 · 탈퇴(3종 사유 · 무증빙 허용) · 재입사 승계 흐름</h3>
+            <p style="margin-block-end:0.9rem;">
+              탈퇴나 지부 이동이 발생해도 기존 조합원 레코드를 삭제하지 않고 <strong>불변 ID(<code>M-XXXX</code>)</strong>와 이벤트 타임라인(<code>membership_events</code>), 첨부 증빙 목록(<code>member_documents</code>)을 누적해 시점별 재적 인원과 사유 통계를 추적합니다.
+            </p>
+
+            <figure class="diagram-box" style="margin-block-end:1rem;">
+              <div class="diagram-scroll">
+                <svg viewBox="0 0 880 225" role="img" aria-labelledby="svg-mem-t">
+                  <title id="svg-mem-t">조합원 가입·탈퇴·재가입 상태 전이도</title>
+                  <rect x="18" y="32" width="184" height="84" rx="6" fill="var(--well)" stroke="var(--accent)"/>
+                  <text x="32" y="56" font-size="12" font-weight="800" fill="var(--accent)">신규 가입 (join)</text>
+                  <text x="32" y="75" font-size="10.5" fill="var(--ink-2)">• 새 M-XXXX &amp; EV-XXXX 발급</text>
+                  <text x="32" y="92" font-size="10.5" fill="var(--ink-2)">• first_joined_on = joined_on</text>
+                  <text x="32" y="108" font-size="10.5" fill="var(--muted)">• JOIN_YYYYMMDD_...md 생성</text>
+
+                  <line x1="202" y1="74" x2="256" y2="74" stroke="var(--accent)" stroke-width="1.6" marker-end="url(#arr)"/>
+
+                  <rect x="260" y="24" width="210" height="100" rx="6" fill="var(--income-soft)" stroke="var(--income)" stroke-width="1.8"/>
+                  <text x="276" y="50" font-size="13" font-weight="800" fill="var(--income)">현직 (status: active)</text>
+                  <text x="276" y="71" font-size="11" fill="var(--ink-2)">• 안물(33) · 부평물(27) · 본부(1)</text>
+                  <text x="276" y="89" font-size="11" fill="var(--ink-2)">• transfer: 지부 이동 로그</text>
+                  <text x="276" y="107" font-size="10.5" fill="var(--muted)">• privacy.json + directory/*.md 자동 반영</text>
+
+                  <line x1="470" y1="74" x2="532" y2="74" stroke="var(--expense)" stroke-width="1.6" marker-end="url(#arr)"/>
+                  <text x="476" y="64" font-size="10" font-weight="700" fill="var(--expense)">withdraw</text>
+
+                  <rect x="536" y="20" width="324" height="114" rx="6" fill="var(--expense-soft)" stroke="var(--expense)"/>
+                  <text x="550" y="44" font-size="12.5" font-weight="800" fill="var(--expense)">탈퇴 · 비현역 (withdrawn / retired)</text>
+                  <text x="550" y="65" font-size="11" fill="var(--ink-2)">• 사유 3종: 정년퇴직 / 계약만료·퇴직 / 기타</text>
+                  <text x="550" y="83" font-size="11" fill="var(--ink-2)">• 증빙 3종: 가입서 / 탈퇴서 / 기타 (0~N건)</text>
+                  <text x="550" y="101" font-size="11" fill="var(--muted)">• 무증빙·구두 확인도 WITHDRAW_*.md 자동 생성</text>
+                  <text x="550" y="119" font-size="10.5" fill="var(--grant)">• 선택: 조합비 환급 거래(refund_tx_id) 연결</text>
+
+                  <!-- Rejoin loop -->
+                  <path d="M 698 134 L 698 184 L 365 184 L 365 128" fill="none" stroke="var(--accent)" stroke-width="1.8" marker-end="url(#arr)"/>
+                  <rect x="404" y="156" width="268" height="46" rx="5" fill="var(--sheet)" stroke="var(--accent)"/>
+                  <text x="416" y="176" font-size="11" font-weight="700" fill="var(--accent)">재입사 · 재가입 (join/rejoin 자동 감지)</text>
+                  <text x="416" y="193" font-size="10" fill="var(--muted)">성명+생년월일 일치 → 기존 person_id·최초가입일 승계</text>
+                </svg>
+              </div>
+            </figure>
+
+            <div class="grid-2">
+              <div class="sheet-card">
+                <h3>가입서 원본 이미지 ↔ 마크다운 1:1 관리</h3>
+                <ul class="step-list">
+                  <li><code>_raw/applications/</code>에 원본 사진(<code>JOIN_YYYYMMDD_M-XXXX_성명.jpg</code>)과 요약 마크다운(<code>.md</code>)을 나란히 보관합니다.</li>
+                  <li>상하 반전 촬영본(<code>M-0066</code> 등)은 180° 정방향 회전 후 아카이빙했으며, 주민번호 뒷자리·전화·이메일·생년월일은 Git에서 완전 제외합니다.</li>
+                  <li><code>directory/members.md</code>에서 <code>[열람]</code> 링크를 누르면 기재 원문(<code>노동조합에 바라는 점</code>)과 원본 스캔을 한 번에 대조할 수 있습니다.</li>
+                </ul>
+              </div>
+              <div class="sheet-card">
+                <h3>탈퇴 사유 · 증빙 유연성 설계</h3>
+                <ul class="step-list">
+                  <li>종이 탈퇴서가 없는 현장 실무를 고려해 <strong>증빙 0건(구두 메모)</strong>부터 <strong>다중 첨부(메신저 캡처·인사통보 등 <code>기타</code>)</strong>까지 모두 수용합니다.</li>
+                  <li>기간제 조합원이 <code>계약만료·퇴직</code> 후 재입사하면 기존 <code>M-XXXX</code> ID를 그대로 승계해 과거 경조사·근속 이력이 끊기지 않습니다.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: SQLite & Web UI -->
+        <div role="tabpanel" aria-labelledby="tab-db" hidden="until-found">
+          <div class="panel-inner">
+            <h3>SQLite 10-테이블 구조 &amp; 공개 웹 프론트엔드 아키텍처</h3>
+            <p style="margin-block-end:0.9rem;">
+              JSON 사전들을 중첩 없이 평평한 관계형 구조로 설계해 두어, <code>python scripts/manage_members.py export-sqlite</code> 한 줄로 외래키(FK)와 <code>CHECK</code> 제약조건이 검증된 SQLite DB(<code>data/local/accounting.db</code>)를 즉시 생성합니다.
+            </p>
+
+            <figure class="diagram-box" style="margin-block-end:1rem;">
+              <div class="diagram-scroll">
+                <svg viewBox="0 0 880 225" role="img" aria-labelledby="svg-erd-t">
+                  <title id="svg-erd-t">SQLite 10개 테이블 관계도</title>
+                  <rect x="20" y="20" width="165" height="62" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+                  <text x="32" y="42" font-size="12" font-weight="800" fill="var(--ink)">units</text>
+                  <text x="32" y="60" font-size="10.5" fill="var(--muted)">PK code (HQ/AY/BP/SS)</text>
+                  <text x="32" y="74" font-size="10" fill="var(--muted)">opened_on, closed_on</text>
+
+                  <rect x="20" y="132" width="165" height="64" rx="5" fill="var(--well)" stroke="var(--logo-blue)"/>
+                  <text x="32" y="154" font-size="12" font-weight="800" fill="var(--ink)">accounts</text>
+                  <text x="32" y="172" font-size="10.5" fill="var(--muted)">PK (category,관,항,목)</text>
+                  <text x="32" y="186" font-size="10" fill="var(--muted)">47개 표준 계정과목</text>
+
+                  <line x1="185" y1="51" x2="232" y2="51" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+                  <rect x="236" y="18" width="196" height="86" rx="5" fill="var(--sheet)" stroke="var(--accent)" stroke-width="1.6"/>
+                  <text x="248" y="40" font-size="12" font-weight="800" fill="var(--accent)">members (67)</text>
+                  <text x="248" y="58" font-size="10.5" fill="var(--ink-2)">PK person_id · FK unit_code</text>
+                  <text x="248" y="74" font-size="10.5" fill="var(--muted)">birth_date, phone, email</text>
+                  <text x="248" y="90" font-size="10" fill="var(--muted)">first_joined_on, joined_on</text>
+
+                  <line x1="432" y1="45" x2="478" y2="45" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+                  <rect x="482" y="18" width="196" height="86" rx="5" fill="var(--sheet)" stroke="var(--logo-blue)"/>
+                  <text x="494" y="40" font-size="12" font-weight="700" fill="var(--ink)">membership_events (67)</text>
+                  <text x="494" y="58" font-size="10.5" fill="var(--muted)">PK event_id · FK person_id</text>
+                  <text x="494" y="74" font-size="10" fill="var(--muted)">reason_category (3종 CHECK)</text>
+                  <text x="494" y="90" font-size="10" fill="var(--muted)">rejoin_category, refund_tx_id</text>
+
+                  <line x1="678" y1="54" x2="710" y2="54" stroke="var(--accent)" stroke-width="1.5" marker-end="url(#arr)"/>
+                  <rect x="714" y="18" width="150" height="86" rx="5" fill="var(--sheet)" stroke="var(--logo-blue)"/>
+                  <text x="724" y="40" font-size="11.5" font-weight="700" fill="var(--ink)">member_documents</text>
+                  <text x="724" y="58" font-size="10" fill="var(--muted)">PK doc_id · FK event_id</text>
+                  <text x="724" y="74" font-size="10" fill="var(--muted)">doc_type (가입서/탈퇴서/기타)</text>
+                  <text x="724" y="90" font-size="10" fill="var(--muted)">file_path, note</text>
+
+                  <rect x="236" y="128" width="196" height="82" rx="5" fill="var(--well)" stroke="var(--rule)"/>
+                  <text x="248" y="149" font-size="11.5" font-weight="700" fill="var(--ink)">external_people (5)</text>
+                  <text x="248" y="167" font-size="10.5" fill="var(--muted)">person_aliases (35)</text>
+                  <text x="248" y="183" font-size="10.5" fill="var(--muted)">person_roles (10)</text>
+                  <text x="248" y="199" font-size="10" fill="var(--accent)">별칭·기간별 직책 분리</text>
+
+                  <line x1="185" y1="164" x2="478" y2="164" stroke="var(--income)" stroke-width="1.5" marker-end="url(#arr)"/>
+                  <rect x="482" y="128" width="196" height="82" rx="5" fill="var(--income-soft)" stroke="var(--income)"/>
+                  <text x="494" y="150" font-size="12" font-weight="800" fill="var(--income)">ledger_entries (509)</text>
+                  <text x="494" y="168" font-size="10.5" fill="var(--ink-2)">PK tx_id · year, ym, date</text>
+                  <text x="494" y="184" font-size="10.5" fill="var(--muted)">inc, exp, unit_bal, note</text>
+                  <text x="494" y="199" font-size="10" fill="var(--muted)">정식 성명 통일 완료</text>
+
+                  <line x1="678" y1="164" x2="710" y2="164" stroke="var(--income)" stroke-width="1.5" marker-end="url(#arr)"/>
+                  <rect x="714" y="128" width="150" height="82" rx="5" fill="var(--sheet)" stroke="var(--income)"/>
+                  <text x="724" y="150" font-size="11.5" font-weight="700" fill="var(--ink)">ledger_person_links</text>
+                  <text x="724" y="168" font-size="10" fill="var(--muted)">tx_id ↔ person_id (51)</text>
+                  <text x="724" y="184" font-size="10" fill="var(--muted)">경조사·찬조 교차 조회</text>
+                </svg>
+              </div>
+            </figure>
+
+            <div class="grid-3">
+              <div class="sheet-card">
+                <h3>브랜드 컬러 · 테마</h3>
+                <p>물류노조 육각 심볼(<code>#516DB2</code>) + 클라인 블루(<code>#002FA7</code>) 밝은 원장 톤을 기본으로 하며, 상단 버튼(<code>localStorage</code> + <code>&lt;meta name="color-scheme"&gt;</code>)으로 다크 모드를 즉시 전환합니다.</p>
+              </div>
+              <div class="sheet-card">
+                <h3>반응형 차트 · 탐색 UX</h3>
+                <p>시계열 차트는 <code>한눈에 보기</code>·<code>확대 탐색</code>+미니맵을 모두 지원하며, 모바일에서는 컨테이너 쿼리 기반 3열 수치 요약 카드와 4종 스와이프 탭 덱으로 자동 전환됩니다.</p>
+              </div>
+              <div class="sheet-card">
+                <h3>금년 기본 필터 · 딥링크</h3>
+                <p>대시보드·거래 탐색기·아카이브 모두 <code>new Date().getFullYear()</code> 기준 금년을 기본값으로 열고(<code>전체 기간</code>은 맨 뒤 배치), 대시보드 막대를 누르면 거래 탐색기로 필터가 그대로 넘어갑니다.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Folder & File Inventory -->
+  <section id="sec-dirs" class="band" aria-labelledby="h-dirs">
+    <div class="sec-head">
+      <h2 id="h-dirs">3. 폴더 및 핵심 파일 지도</h2>
+      <span class="sec-sub">공개 추적 파일과 <code>.gitignore</code> 비공개 자산 구분</span>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">경로</th>
+            <th scope="col">공개 여부</th>
+            <th scope="col">역할 및 작동 설명</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>scripts/build_reports.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td><code>ledger.xlsx</code> 파싱, 성명 정규화, 산술·COA 검증, 내부 월간/연간 보고서 및 PNG 차트 생성</td>
+          </tr>
+          <tr>
+            <td><code>scripts/build_site.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>개인정보 마스킹(<code>ledger_public.json</code>) 및 정적 웹(<code>_site/</code>) 53개 HTML 페이지 생성</td>
+          </tr>
+          <tr>
+            <td><code>scripts/validate_site.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>계정/잔액 검산 + 실명·전화·이메일 유출 0건 검사 + 수식 오류·깨진 링크 검사</td>
+          </tr>
+          <tr>
+            <td><code>scripts/people_utils.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>약칭→정식 성명 통일, 존칭·수식어·직책 박리 엔진 및 <code>privacy.json</code> 동기화</td>
+          </tr>
+          <tr>
+            <td><code>scripts/manage_members.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>조합원 가입·탈퇴·재가입·이동 CLI, <code>directory/</code>·<code>_raw/applications/*.md</code> 생성, SQLite 내보내기</td>
+          </tr>
+          <tr>
+            <td><code>scripts/manage_units.py</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>회계단위(지부) 신설·폐지 관리 및 <code>_raw/{CODE}/</code> 폴더 자동 생성</td>
+          </tr>
+          <tr>
+            <td><code>web/assets/*</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td><code>app.css</code>(Option B 토큰·반응형), <code>dashboard.js</code>(Chart.js·미니맵), <code>ledger.js</code>, <code>nav.js</code></td>
+          </tr>
+          <tr>
+            <td><code>data/public/ledger_public.json</code></td>
+            <td><span class="badge public">공개 추적</span></td>
+            <td>비식별 처리된 509건 공개 원장 스냅샷 (GitHub Actions CI 빌드의 입력 원본)</td>
+          </tr>
+          <tr>
+            <td><code>config/{members,external_people,title_rules,privacy}.json</code></td>
+            <td><span class="badge private">로컬 전용</span></td>
+            <td>조합원 명부(67명)·외부인(5명)·제외/직책 규칙·비식별 금지어(103개) 원본 JSON</td>
+          </tr>
+          <tr>
+            <td><code>directory/*.md</code> &amp; <code>_raw/applications/*</code></td>
+            <td><span class="badge private">로컬 전용</span></td>
+            <td>사람이 바로 열어보는 마크다운 명부, 개별 가입서·탈퇴서 기록 카드 및 원본 스캔</td>
+          </tr>
+          <tr>
+            <td><code>data/latest/</code> &amp; <code>data/local/accounting.db</code></td>
+            <td><span class="badge private">로컬 전용</span></td>
+            <td>최신 엑셀/CSV/JSON 스냅샷 및 SQLite 10-테이블 관계형 로컬 DB</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Section 4: CLI Operations Accordion -->
+  <section id="sec-cli" class="band" aria-labelledby="h-cli">
+    <div class="sec-head">
+      <h2 id="h-cli">4. 상황별 실무 운영 명령어</h2>
+      <span class="sec-sub">클릭해 각 상황별 실행 명령을 펼쳐 확인하세요.</span>
+    </div>
+
+    <details open>
+      <summary>월간 회계 마감 후 보고서 · 공개 웹 동시 갱신</summary>
+      <div class="details-body">
+        <pre role="region" aria-label="월간 회계 마감 명령어" tabindex="0"><code># 1. Google Sheets에서 data/latest/ledger.xlsx 갱신 후 내부 검증 및 보고서 생성
+python scripts/build_reports.py --month 2026-09 --year 2026
+
+# 2. 공개 웹용 데이터 재비식별 + _site/ 빌드 + 개인정보·링크 검증
+python scripts/build_site.py
+python scripts/validate_site.py</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>조합원 가입 · 무증빙/다중증빙 탈퇴 · 계약만료 후 재입사 처리</summary>
+      <div class="details-body">
+        <pre role="region" aria-label="조합원 관리 명령어" tabindex="0"><code># 현직 요약 및 변동 이력 확인
+python scripts/manage_members.py summary
+python scripts/manage_members.py history --limit 20
+
+# 신규 가입 (동일 성명+생년월일 비현역자 존재 시 자동으로 재가입·ID 승계 처리)
+python scripts/manage_members.py join --name 홍길동 --birth 950101 --unit BP --shift 야근 --emp-type 기간제 --doc "가입서=파일.jpg"
+
+# 탈퇴 처리 (사유 3종: 정년퇴직 / 계약만료·퇴직 / 기타 · 무증빙 가능)
+python scripts/manage_members.py withdraw --name 홍길동 --category 계약만료·퇴직 --reason "계약 종료" --doc-note "구두 확인"</code></pre>
+      </div>
+    </details>
+
+    <details>
+      <summary>마크다운 사전 · SQLite DB 동기화 및 지부 신설/폐지</summary>
+      <div class="details-body">
+        <pre role="region" aria-label="사전 및 DB 동기화 명령어" tabindex="0"><code># directory/*.md 및 _raw/applications/*.md 일괄 재생성
+python scripts/manage_members.py export-md
+
+# SQLite 로컬 DB (data/local/accounting.db) 생성/동기화
+python scripts/manage_members.py export-sqlite
+
+# 회계단위(지부) 목록 확인
+python scripts/manage_units.py list</code></pre>
+      </div>
+    </details>
+  </section>
+</main>
+
+<footer>
+  <span>우체국물류지원단 물류노동조합 회계·조합원 관리 시스템 문서 (<code>docs/system_guide.html</code>)</span>
+  <span>로컬 열람 가능 · 개인 실명/연락처 미포함 공개 안전 버전</span>
+</footer>
+
+<script>
+(function () {
+  const meta = document.querySelector('meta[name="color-scheme"]');
+  const themeBtn = document.getElementById("theme-toggle");
+
+  function resolvedScheme() {
+    if (meta.content === "light" || meta.content === "dark") return meta.content;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+
+  function syncThemeBtn() {
+    const cur = resolvedScheme();
+    themeBtn.setAttribute("aria-pressed", String(cur === "dark"));
+    themeBtn.setAttribute("aria-label", cur === "dark" ? "라이트 모드로 전환" : "다크 모드로 전환");
+  }
+
+  themeBtn.addEventListener("click", () => {
+    const sys = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    const target = resolvedScheme() === "dark" ? "light" : "dark";
+    try {
+      if (target === sys) {
+        localStorage.removeItem("color-scheme");
+        meta.content = "light dark";
+      } else {
+        localStorage.setItem("color-scheme", target);
+        meta.content = target;
+      }
+    } catch (e) {
+      meta.content = target;
+    }
+    syncThemeBtn();
+  });
+
+  window.addEventListener("storage", (e) => {
+    if (e.key === "color-scheme") {
+      meta.content = e.newValue === "dark" || e.newValue === "light" ? e.newValue : "light dark";
+      syncThemeBtn();
+    }
+  });
+  syncThemeBtn();
+
+  // Accessible tabs with hidden="until-found" + beforematch + Arrow fallback
+  const tablist = document.querySelector(".tablist");
+  const tabs = [...tablist.querySelectorAll("button")];
+  const panels = [...document.querySelectorAll('.tab-panels > [role="tabpanel"]')];
+
+  function activateTab(nextTab, focusTab) {
+    tabs.forEach((tab, idx) => {
+      const selected = tab === nextTab;
+      tab.setAttribute("aria-selected", String(selected));
+      tab.toggleAttribute("focusgroupstart", selected);
+      if (!Object.hasOwn(HTMLElement.prototype, "focusGroup")) {
+        tab.tabIndex = selected ? 0 : -1;
+      }
+      const panel = panels[idx];
+      if (panel) {
+        if (selected) {
+          panel.removeAttribute("hidden");
+          panel.tabIndex = 0;
+        } else {
+          panel.setAttribute("hidden", "until-found");
+          panel.removeAttribute("tabindex");
+        }
+      }
+    });
+    try {
+      nextTab.scrollIntoView({ block: "nearest", inline: "nearest", container: "nearest" });
+    } catch (e) {
+      nextTab.scrollIntoView({ block: "nearest", inline: "nearest" });
+    }
+    if (focusTab) nextTab.focus();
+  }
+
+  tabs.forEach((tab, idx) => {
+    tab.addEventListener("click", () => activateTab(tab, false));
+    tab.addEventListener("focus", () => activateTab(tab, false));
+    tab.addEventListener("keydown", (e) => {
+      if (Object.hasOwn(HTMLElement.prototype, "focusGroup")) return;
+      let nextIdx = null;
+      if (e.key === "ArrowRight") nextIdx = (idx + 1) % tabs.length;
+      else if (e.key === "ArrowLeft") nextIdx = (idx - 1 + tabs.length) % tabs.length;
+      else if (e.key === "Home") nextIdx = 0;
+      else if (e.key === "End") nextIdx = tabs.length - 1;
+      if (nextIdx !== null) {
+        e.preventDefault();
+        activateTab(tabs[nextIdx], true);
+      }
+    });
+  });
+
+  panels.forEach((panel, idx) => {
+    panel.addEventListener("beforematch", () => activateTab(tabs[idx], false));
+  });
+
+  if (!CSS.supports("animation-timeline", "scroll()")) {
+    const [first, last] = [tabs[0], tabs[tabs.length - 1]];
+    const obs = new IntersectionObserver((entries) => {
+      for (const { target, intersectionRatio } of entries) {
+        tablist.classList.toggle(target === first ? "more-start" : "more-end", intersectionRatio < 1);
+      }
+    }, { root: tablist, threshold: 1, rootMargin: "1px" });
+    obs.observe(first);
+    obs.observe(last);
+  }
+})();
+</script>
+</body>
+</html>

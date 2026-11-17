@@ -28,6 +28,7 @@ Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8
 | `reports/monthly/` | 내부 회의용 정기 운영위원회 월간 재정보고 (`YYYY-MM_운영위보고.html`, Git 제외) |
 | `reports/annual/` | 내부 회의용 대의원대회 결산 보고서 (`YYYY_대의원대회결산.html`, Git 제외) |
 | `reports/charts/` | 대의원대회용 고해상도 PNG 차트 이미지 (Git 제외) |
+| `docs/system_guide.html` | 전체 시스템 아키텍처·작동 원리 시각화 설명서 (단독 HTML) |
 | `GLOSSARY.md` | 회계 도메인 용어 사전 |
 
 ## 4. 공개 웹 대시보드 빌드 및 GitHub Pages 배포
