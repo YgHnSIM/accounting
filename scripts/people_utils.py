@@ -44,6 +44,7 @@ def load_directory_bundle(config_dir: Path | None = None) -> dict:
 
     members = list(members_doc.get("members", []))
     events = list(members_doc.get("membership_events", []))
+    documents = list(members_doc.get("member_documents", []))
     externals = list(external_doc.get("external_people", []))
 
     if not members and not externals and legacy_doc.get("people"):
@@ -67,6 +68,7 @@ def load_directory_bundle(config_dir: Path | None = None) -> dict:
     return {
         "members": members,
         "membership_events": events,
+        "member_documents": documents,
         "external_people": externals,
         "title_rules": rules_doc,
         "privacy": privacy_doc,
