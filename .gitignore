@@ -6,6 +6,10 @@ reports/
 _site/
 config/privacy.json
 config/people.json
+config/members.json
+config/external_people.json
+config/title_rules.json
+data/local/
 
 # Python / OS noise
 __pycache__/

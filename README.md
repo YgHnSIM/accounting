@@ -9,13 +9,17 @@ Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8
 | `_raw/{단위코드}/` | 월별 원본 PDF 보관 (`HQ`: 본부, `AY`: 안물, `BP`: 부평물, `SS`: 서물[폐지]) |
 | `config/units.json` | 회계단위 코드·명칭·신설/폐지 상태 레지스트리 |
 | `config/coa.json` | 3단계 계정과목(`관·항·목`), `지출형태`, `재원구분` 마스터 |
-| `config/people.json` | 인명사전: 지부 조합원 명부 및 원장 인물 인덱스 · 존칭 생략 정책 (Git 제외) |
+| `config/members.json` | 조합원 관리 명부 (`members`, `membership_events` — 가입·탈퇴·이동 이력, Git 제외) |
+| `config/external_people.json` | 외부인 인명사전 (`external_people` — 본사·유관노조·상급단체, Git 제외) |
+| `config/title_rules.json` | 정식 성명 통일·제외 목록·별칭·직책 매칭 사전 (Git 제외) |
 | `data/latest/` | 최신 동기화 스냅샷 (`ledger.xlsx`, 탭별 `.csv`, `ledger.json`, `sync_meta.json`) |
+| `data/local/accounting.db` | SQLite 1:1 내보내기 로컬 DB (`manage_members.py export-sqlite`, Git 제외) |
 | `data/snapshots/YYYY-MM-DD/` | 날짜별 `.xlsx` 백업 스냅샷 |
-| `scripts/build_reports.py` | 원장 검증(존칭 자동 생략 포함) + 내부 회의용 운영위·대의원대회 보고서/차트 생성기 |
+| `scripts/build_reports.py` | 원장 검증(정식 성명 통일 포함) + 내부 회의용 운영위·대의원대회 보고서/차트 생성기 |
 | `scripts/build_site.py` | 공개용 정제(`ledger_public.json`) 및 `_site/`(대시보드·탐색기·아카이브) 빌더 |
 | `scripts/validate_site.py` | 원장 산술 검증 + 개인 실명·연락처 비식별 검사 + 링크/모바일 메타 검증기 |
-| `scripts/people_utils.py` | 인명사전 조회, `privacy.json` 동기화 및 인명 존칭 생략 정규화 유틸리티 |
+| `scripts/people_utils.py` | 인명사전 로드, `privacy.json` 동기화 및 약칭→정식 성명·직책/존칭 제거 엔진 |
+| `scripts/manage_members.py` | 조합원 가입/탈퇴/재가입/지부이동 CLI 및 SQLite DB 내보내기 도구 |
 | `scripts/manage_units.py` | 지부 신설·폐지 시 `units.json` 및 `_raw/{CODE}/` 자동 관리 |
 | `web/` | 대시보드(`dashboard.js`), 거래 탐색기(`ledger.js`), 반응형 UI(`app.css`, `nav.js`) |
 | `data/public/` | 개인 실명이 비식별 처리된 GitHub Pages 빌드용 공개 JSON |
@@ -25,8 +29,8 @@ Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8
 | `GLOSSARY.md` | 회계 도메인 용어 사전 |
 
 ## 4. 공개 웹 대시보드 빌드 및 GitHub Pages 배포
-- 공개 웹 빌드(`_site/`)에서는 `config/privacy.json`과 `config/people.json` 규칙에 따라 조합원·관계자 실명 및 연락처를 자동 비식별 처리하며, `config/privacy.json`·`config/people.json`·`_raw/`·`data/latest/`·내부 `reports/`는 `.gitignore`로 Git 추적에서 제외됩니다.
-- 내부 원장·보고서 및 일반 표기에서는 인명사전(`config/people.json`) 기준에 따라 사람 이름 뒤 `'님'` 등 모든 존칭을 생략합니다.
+- 공개 웹 빌드(`_site/`)에서는 `config/privacy.json`과 로컬 인명사전(`members.json`, `external_people.json`) 규칙에 따라 조합원·관계자 실명 및 연락처를 자동 비식별 처리하며, 개인정보·원본 파일(`config/privacy.json`, `members.json`, `external_people.json`, `title_rules.json`, `_raw/`, `data/latest/`, `data/local/`, 내부 `reports/`)은 `.gitignore`로 Git 추적에서 제외됩니다.
+- 내부 원장·보고서 및 일반 표기에서는 `config/title_rules.json` 기준에 따라 약칭을 정식 성명으로 통일하고 존칭·수식어·직책을 제거해 **정식 성명만** 남깁니다(직책 매칭 정보는 `person_roles`에 분리 보관).
 - `main` 브랜치에 푸시하면 `.github/workflows/pages.yml`이 자동 검증 후 GitHub Pages로 배포합니다.
 
 ```powershell

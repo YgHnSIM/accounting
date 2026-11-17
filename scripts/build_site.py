@@ -13,8 +13,8 @@ import matplotlib.pyplot as plt
 
 from people_utils import (
     collect_person_names,
-    load_people_cfg,
-    strip_person_honorifics,
+    load_directory_bundle,
+    normalize_person_mentions,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -73,20 +73,20 @@ def summarize_period(recs):
     }
 
 
-def sanitize_records(records, privacy_cfg, people_cfg=None):
+def sanitize_records(records, privacy_cfg, bundle=None):
     target_mask = privacy_cfg.get("targetMask", {})
     note_map = privacy_cfg.get("exactNoteReplacements", {})
-    forbidden = collect_person_names(people_cfg, privacy_cfg)
+    forbidden = collect_person_names(bundle, privacy_cfg)
     clean = []
     for r in records:
         nr = dict(r)
-        raw_target = strip_person_honorifics(nr.get("target", ""), forbidden, people_cfg)
+        raw_target = normalize_person_mentions(nr.get("target", ""), forbidden, bundle)
         nr["target"] = target_mask.get(raw_target, target_mask.get(nr.get("target", ""), raw_target))
         for name in forbidden:
             if name in nr["target"]:
                 nr["target"] = "개인"
 
-        raw_note = strip_person_honorifics(nr.get("note", ""), forbidden, people_cfg)
+        raw_note = normalize_person_mentions(nr.get("note", ""), forbidden, bundle)
         if raw_note in note_map:
             note = note_map[raw_note]
         elif nr.get("note", "") in note_map:
@@ -95,11 +95,11 @@ def sanitize_records(records, privacy_cfg, people_cfg=None):
             note = raw_note
             for name in forbidden:
                 if name in note:
-                    note = re.sub(rf"{re.escape(name)}(?:\s*(?:님|팀장|조합원|위원장|사무국장|단장|지부장|처장|실장))?", "관계자", note)
+                    note = re.sub(rf"{re.escape(name)}(?:\s*(?:님|팀장|조합원|위원장|사무국장|단장|지부장|처장|실장|반장))?", "관계자", note)
         nr["note"] = note
 
         # Strip raw source/memo internal detail filenames if any name appears
-        memo = strip_person_honorifics(nr.get("memo", ""), forbidden, people_cfg)
+        memo = normalize_person_mentions(nr.get("memo", ""), forbidden, bundle)
         for name in forbidden:
             if name in memo:
                 memo = memo.replace(name, "관계자")
@@ -1056,7 +1056,7 @@ def main():
     units_cfg = json.loads((CONFIG_DIR / "units.json").read_text(encoding="utf-8"))
     priv_path = CONFIG_DIR / "privacy.json"
     privacy_cfg = json.loads(priv_path.read_text(encoding="utf-8")) if priv_path.exists() else {}
-    people_cfg = load_people_cfg(CONFIG_DIR / "people.json")
+    bundle = load_directory_bundle(CONFIG_DIR)
 
     DATA_PUBLIC.mkdir(parents=True, exist_ok=True)
     pub_json_path = DATA_PUBLIC / "ledger_public.json"
@@ -1064,7 +1064,7 @@ def main():
     raw_json_path = DATA_LATEST / "ledger.json"
     if not args.ci and raw_json_path.exists():
         raw_records = json.loads(raw_json_path.read_text(encoding="utf-8"))
-        pub_records = sanitize_records(raw_records, privacy_cfg, people_cfg)
+        pub_records = sanitize_records(raw_records, privacy_cfg, bundle)
         meta = json.loads((DATA_LATEST / "sync_meta.json").read_text(encoding="utf-8")) if (DATA_LATEST / "sync_meta.json").exists() else {}
         pub_payload = {
             "meta": {

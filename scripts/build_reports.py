@@ -13,11 +13,9 @@ import matplotlib.ticker as ticker
 import openpyxl
 
 from people_utils import (
-    DEFAULT_PRIVACY_PATH,
     collect_person_names,
-    load_json_if_exists,
-    load_people_cfg,
-    strip_person_honorifics,
+    load_directory_bundle,
+    normalize_person_mentions,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -69,9 +67,9 @@ def norm_int(v):
     return int(float(s)) if s else 0
 
 
-def load_xlsx_to_records(xlsx_path: Path, people_cfg: dict | None = None, known_names: list[str] | None = None):
+def load_xlsx_to_records(xlsx_path: Path, bundle: dict | None = None, known_names: list[str] | None = None):
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    norm = lambda s: strip_person_honorifics(str(s or "").strip(), known_names, people_cfg)
+    norm = lambda s: normalize_person_mentions(str(s or "").strip(), known_names, bundle)
     sheet_exports = ["통합원장", "원장_본부", "원장_안물", "원장_부평물", "계정과목표"]
     for sname in sheet_exports:
         if sname not in wb.sheetnames:
@@ -91,7 +89,7 @@ def load_xlsx_to_records(xlsx_path: Path, people_cfg: dict | None = None, known_
                             else:
                                 cleaned.append(c.strftime("%Y-%m-%d"))
                         else:
-                            cleaned.append("" if c is None else (strip_person_honorifics(c, known_names, people_cfg) if isinstance(c, str) else c))
+                            cleaned.append("" if c is None else (normalize_person_mentions(c, known_names, bundle) if isinstance(c, str) else c))
                     w.writerow(cleaned)
 
     ws = wb["통합원장"]
@@ -736,15 +734,14 @@ def main():
 
     units_cfg = json.loads((CONFIG_DIR / "units.json").read_text(encoding="utf-8"))
     coa_cfg = json.loads((CONFIG_DIR / "coa.json").read_text(encoding="utf-8"))
-    people_cfg = load_people_cfg()
-    privacy_cfg = load_json_if_exists(DEFAULT_PRIVACY_PATH)
-    known_names = collect_person_names(people_cfg, privacy_cfg)
+    bundle = load_directory_bundle(CONFIG_DIR)
+    known_names = collect_person_names(bundle)
 
     xlsx_path = Path(args.xlsx)
     if not xlsx_path.exists():
         raise SystemExit(f"오류: XLSX 파일이 없습니다: {xlsx_path}\nGoogle Sheet에서 다운로드하거나 동기화를 먼저 실행하세요.")
 
-    headers, records = load_xlsx_to_records(xlsx_path, people_cfg=people_cfg, known_names=known_names)
+    headers, records = load_xlsx_to_records(xlsx_path, bundle=bundle, known_names=known_names)
     errors, unit_balances = verify_records(records, coa_cfg)
     if errors:
         print("검증 오류 발견:")

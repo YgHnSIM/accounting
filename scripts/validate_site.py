@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from people_utils import collect_person_names, load_people_cfg
+from people_utils import collect_person_names, load_directory_bundle
 
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "config"
@@ -14,9 +14,9 @@ SITE_DIR = ROOT / "_site"
 def main():
     priv_path = CONFIG_DIR / "privacy.json"
     privacy_cfg = json.loads(priv_path.read_text(encoding="utf-8")) if priv_path.exists() else {}
-    people_cfg = load_people_cfg(CONFIG_DIR / "people.json")
+    bundle = load_directory_bundle(CONFIG_DIR)
     coa_cfg = json.loads((CONFIG_DIR / "coa.json").read_text(encoding="utf-8"))
-    forbidden = collect_person_names(people_cfg, privacy_cfg)
+    forbidden = collect_person_names(bundle, privacy_cfg)
     phone_re = re.compile(r"01[016789]-?\d{3,4}-?\d{4}")
     generic_name_re = re.compile(r"[가-힣]{2,4}(?:님|팀장|조합원|위원장|사무국장)\s*(?:모친상|부친상|장인상|빙모상|빙부상|시모상)")
 
