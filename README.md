@@ -7,6 +7,7 @@ Google Sheets 통합 원장([ledger](https://docs.google.com/spreadsheets/d/1uD8
 | 경로 | 역할 |
 | :--- | :--- |
 | `_raw/{단위코드}/` | 월별 원본 PDF 보관 (`HQ`: 본부, `AY`: 안물, `BP`: 부평물, `SS`: 서물[폐지]) |
+| `_raw/applications/` | 조합원 가입서·변동서 원본 이미지 보관 (`JOIN_YYYYMMDD_{person_id}_{성명}.jpg`, Git 제외) |
 | `config/units.json` | 회계단위 코드·명칭·신설/폐지 상태 레지스트리 |
 | `config/coa.json` | 3단계 계정과목(`관·항·목`), `지출형태`, `재원구분` 마스터 |
 | `config/members.json` | 조합원 관리 명부 (`members`, `membership_events` — 가입·탈퇴·이동 이력, Git 제외) |

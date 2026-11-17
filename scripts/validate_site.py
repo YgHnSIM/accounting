@@ -17,7 +17,13 @@ def main():
     bundle = load_directory_bundle(CONFIG_DIR)
     coa_cfg = json.loads((CONFIG_DIR / "coa.json").read_text(encoding="utf-8"))
     forbidden = collect_person_names(bundle, privacy_cfg)
+    forbidden_emails = {
+        str(p.get("email", "")).strip()
+        for p in bundle.get("members", []) + bundle.get("external_people", [])
+        if str(p.get("email", "")).strip()
+    }
     phone_re = re.compile(r"01[016789]-?\d{3,4}-?\d{4}")
+    personal_email_re = re.compile(r"[A-Za-z0-9._%+-]+@(?:naver\.com|gmail\.com|hanmail\.net|daum\.net|kakao\.com|nate\.com)\b", re.I)
     generic_name_re = re.compile(r"[가-힣]{2,4}(?:님|팀장|조합원|위원장|사무국장)\s*(?:모친상|부친상|장인상|빙모상|빙부상|시모상)")
 
     pub_path = DATA_PUBLIC / "ledger_public.json"
@@ -52,6 +58,12 @@ def main():
                 m_phone = phone_re.search(txt)
                 if m_phone:
                     raise SystemExit(f"PRIVACY FAIL (phone): '{m_phone.group(0)}' found in {fp}")
+                for em in forbidden_emails:
+                    if em in txt:
+                        raise SystemExit(f"PRIVACY FAIL (email): '{em}' found in {fp}")
+                m_email = personal_email_re.search(txt)
+                if m_email:
+                    raise SystemExit(f"PRIVACY FAIL (email pattern): '{m_email.group(0)}' found in {fp}")
                 if fp.suffix.lower() in (".json", ".js", ".html"):
                     m_priv = generic_name_re.search(txt)
                     if m_priv:

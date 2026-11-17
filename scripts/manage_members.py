@@ -144,6 +144,7 @@ def cmd_join(args):
     members.append({
         "person_id": pid,
         "name": args.name.strip(),
+        "birth_date": (args.birth or "").strip(),
         "phone": (args.phone or "").strip(),
         "email": (args.email or "").strip(),
         "unit_code": ucode,
@@ -152,6 +153,8 @@ def cmd_join(args):
         "status": "active",
         "joined_on": join_date,
         "left_on": "",
+        "member_wish": (args.wish or "").strip(),
+        "application_doc": (args.doc or "").strip(),
         "note": (args.note or "신규 가입").strip(),
     })
     events.append({
@@ -379,12 +382,27 @@ def export_directory_markdown(out_dir: Path = DEFAULT_DIR_MD) -> list[Path]:
             f"- **근무**: {' · '.join(f'{k} {v}' for k, v in sub_shift.items())}",
             f"- **고용**: {' · '.join(f'{k} {v}' for k, v in sub_emp.items())}",
             "",
-            "| ID | 성명 | 연락처 | 근무 | 고용 | 상태 | 비고 |",
-            "| :--- | :--- | :--- | :---: | :---: | :---: | :--- |",
+            "| ID | 성명 | 생년월일 | 연락처 | 이메일 | 근무 | 고용 | 가입일 | 가입서 | 비고 |",
+            "| :--- | :--- | :---: | :--- | :--- | :---: | :---: | :---: | :---: | :--- |",
         ])
         for m in sub:
+            doc_mark = "보관" if m.get("application_doc") else "-"
             mem_lines.append(
-                f"| `{m['person_id']}` | **{m['name']}** | {_md_cell(m.get('phone'))} | {_md_cell(m.get('shift'))} | {_md_cell(m.get('employment_type'))} | {m.get('status')} | {_md_cell(m.get('note'))} |"
+                f"| `{m['person_id']}` | **{m['name']}** | {_md_cell(m.get('birth_date'))} | {_md_cell(m.get('phone'))} | {_md_cell(m.get('email'))} | {_md_cell(m.get('shift'))} | {_md_cell(m.get('employment_type'))} | {_md_cell(m.get('joined_on'))} | {doc_mark} | {_md_cell(m.get('note'))} |"
+            )
+        mem_lines.append("")
+
+    wish_members = [m for m in members if str(m.get("member_wish") or "").strip()]
+    if wish_members:
+        mem_lines.extend([
+            f"## 노동조합에 바라는 점 (가입서 기재 원문 · {len(wish_members)}건)",
+            "",
+            "| ID | 성명 | 소속 | 가입일 | 바라는 점 | 원본 가입서 |",
+            "| :--- | :--- | :---: | :---: | :--- | :--- |",
+        ])
+        for m in wish_members:
+            mem_lines.append(
+                f"| `{m['person_id']}` | **{m['name']}** | {m.get('unit_code','')} | {_md_cell(m.get('joined_on'))} | {_md_cell(m.get('member_wish'))} | `{_md_cell(m.get('application_doc'))}` |"
             )
         mem_lines.append("")
 
@@ -530,6 +548,7 @@ def cmd_export_sqlite(args):
             CREATE TABLE members (
                 person_id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
+                birth_date TEXT,
                 phone TEXT,
                 email TEXT,
                 unit_code TEXT REFERENCES units(code),
@@ -538,6 +557,8 @@ def cmd_export_sqlite(args):
                 status TEXT NOT NULL,
                 joined_on TEXT,
                 left_on TEXT,
+                member_wish TEXT,
+                application_doc TEXT,
                 note TEXT
             );
             CREATE TABLE membership_events (
@@ -619,9 +640,9 @@ def cmd_export_sqlite(args):
             ],
         )
         conn.executemany(
-            "INSERT INTO members VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            "INSERT INTO members VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             [
-                (m["person_id"], m["name"], m.get("phone", ""), m.get("email", ""), m.get("unit_code"), m.get("shift", ""), m.get("employment_type", ""), m["status"], m.get("joined_on", ""), m.get("left_on", ""), m.get("note", ""))
+                (m["person_id"], m["name"], m.get("birth_date", ""), m.get("phone", ""), m.get("email", ""), m.get("unit_code"), m.get("shift", ""), m.get("employment_type", ""), m["status"], m.get("joined_on", ""), m.get("left_on", ""), m.get("member_wish", ""), m.get("application_doc", ""), m.get("note", ""))
                 for m in bundle.get("members", [])
             ],
         )
@@ -700,11 +721,14 @@ def main():
     p_join = sub.add_parser("join", help="신규 조합원 가입 처리")
     p_join.add_argument("--name", required=True)
     p_join.add_argument("--unit", required=True)
+    p_join.add_argument("--birth", default="", help="생년월일 앞 6자리 (YYMMDD)")
     p_join.add_argument("--phone", default="")
     p_join.add_argument("--email", default="")
     p_join.add_argument("--shift", default="")
     p_join.add_argument("--emp-type", default="공무직")
     p_join.add_argument("--date", default="")
+    p_join.add_argument("--wish", default="", help="노동조합에 바라는 점")
+    p_join.add_argument("--doc", default="", help="가입서 원본 파일 경로")
     p_join.add_argument("--note", default="")
 
     p_wd = sub.add_parser("withdraw", help="조합원 탈퇴 처리 (이력 보존)")
