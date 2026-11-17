@@ -5,6 +5,7 @@ data/latest/
 reports/
 _site/
 config/privacy.json
+config/people.json
 
 # Python / OS noise
 __pycache__/

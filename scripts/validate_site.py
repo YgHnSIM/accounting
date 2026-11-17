@@ -3,6 +3,8 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+from people_utils import collect_person_names, load_people_cfg
+
 ROOT = Path(__file__).resolve().parent.parent
 CONFIG_DIR = ROOT / "config"
 DATA_PUBLIC = ROOT / "data" / "public"
@@ -12,8 +14,10 @@ SITE_DIR = ROOT / "_site"
 def main():
     priv_path = CONFIG_DIR / "privacy.json"
     privacy_cfg = json.loads(priv_path.read_text(encoding="utf-8")) if priv_path.exists() else {}
+    people_cfg = load_people_cfg(CONFIG_DIR / "people.json")
     coa_cfg = json.loads((CONFIG_DIR / "coa.json").read_text(encoding="utf-8"))
-    forbidden = privacy_cfg.get("forbiddenNames", [])
+    forbidden = collect_person_names(people_cfg, privacy_cfg)
+    phone_re = re.compile(r"01[016789]-?\d{3,4}-?\d{4}")
     generic_name_re = re.compile(r"[가-힣]{2,4}(?:님|팀장|조합원|위원장|사무국장)\s*(?:모친상|부친상|장인상|빙모상|빙부상|시모상)")
 
     pub_path = DATA_PUBLIC / "ledger_public.json"
@@ -45,6 +49,9 @@ def main():
                 for name in forbidden:
                     if name in txt:
                         raise SystemExit(f"PRIVACY FAIL: '{name}' found in {fp}")
+                m_phone = phone_re.search(txt)
+                if m_phone:
+                    raise SystemExit(f"PRIVACY FAIL (phone): '{m_phone.group(0)}' found in {fp}")
                 if fp.suffix.lower() in (".json", ".js", ".html"):
                     m_priv = generic_name_re.search(txt)
                     if m_priv:
