@@ -29,7 +29,7 @@ REPORTS_CHARTS = ROOT / "reports" / "charts"
 plt.rcParams["font.family"] = ["NanumGothic", "Malgun Gothic", "DejaVu Sans"]
 plt.rcParams["axes.unicode_minus"] = False
 
-PALETTE = ["#1F4E78", "#2E75B6", "#4472C4", "#548235", "#BF9000", "#C55A11", "#843C0C", "#7030A0"]
+PALETTE = ["#3b82f6", "#002fa7", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4", "#8b5cf6", "#64748b"]
 
 
 def fmt_won(val):
@@ -438,19 +438,19 @@ def generate_annual_charts(records, target_year: int):
     fig, ax1 = plt.subplots(figsize=(10, 4.4), dpi=200)
     x = list(range(len(months)))
     w = 0.36
-    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="외부 순수입", color="#2E75B6")
-    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="외부 순지출", color="#C55A11")
+    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="외부 순수입", color="#10b981")
+    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="외부 순지출", color="#f43f5e")
     ax1.set_ylabel("월간 수지 (만원)")
     ax1.set_ylim(0, max(m_inc + m_exp + [10]) * 1.15)
     ax1.set_xticks(x)
     ax1.set_xticklabels([m[5:] + "월" for m in months])
     ax1.grid(axis="y", linestyle="--", alpha=0.4)
     ax2 = ax1.twinx()
-    ax2.plot(x, m_end, color="#1F4E78", marker="o", linewidth=2.2, label="기말 통장잔액")
+    ax2.plot(x, m_end, color="#3b82f6", marker="o", linewidth=2.2, label="기말 통장잔액")
     ax2.set_ylabel("기말 잔액 (만원)")
     ax2.set_ylim(0, max(m_end + [10]) * 1.18)
     for i, v in enumerate(m_end):
-        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#1F4E78")
+        ax2.annotate(f"{v:,.0f}", (i, v), textcoords="offset points", xytext=(0, 7), ha="center", fontsize=8, color="#002fa7")
     lines1, labels1 = ax1.get_legend_handles_labels()
     lines2, labels2 = ax2.get_legend_handles_labels()
     ax1.legend(lines1 + lines2, labels1 + labels2, loc="lower center", bbox_to_anchor=(0.5, 1.01), ncol=3, frameon=True)
@@ -496,7 +496,7 @@ def generate_annual_charts(records, target_year: int):
     fig, ax = plt.subplots(figsize=(6.8, 4.5), dpi=200)
     labels = [k for k, _ in reversed(top_m)]
     vals = [v / 10000.0 for _, v in reversed(top_m)]
-    bars = ax.barh(labels, vals, color="#2E75B6")
+    bars = ax.barh(labels, vals, color="#3b82f6")
     for bar, v in zip(bars, vals):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.24 if vals else 10)
@@ -519,7 +519,7 @@ def generate_annual_charts(records, target_year: int):
     fig, ax = plt.subplots(figsize=(6.4, 4.2), dpi=200)
     labels = [k for k, _ in reversed(et_items)]
     vals = [v / 10000.0 for _, v in reversed(et_items)]
-    bars = ax.barh(labels, vals, color="#548235")
+    bars = ax.barh(labels, vals, color="#10b981")
     for bar, v in zip(bars, vals):
         pct = (v * 10000.0) / tot_exp * 100
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원 ({pct:.1f}%)", va="center", fontsize=8.5)
@@ -548,9 +548,9 @@ def generate_annual_charts(records, target_year: int):
     fig, ax = plt.subplots(figsize=(10, 4.2), dpi=200)
     x = list(range(len(all_years)))
     w = 0.25
-    ax.bar([i - w for i in x], [g + p for g, p in zip(dues_g, dues_p)], width=w, label="정기조합비 합계", color="#1F4E78")
-    ax.bar(x, ext_exp_y, width=w, label="외부 순지출", color="#C55A11")
-    ax.bar([i + w for i in x], grants_y, width=w, label="지부 교부금(내부이전)", color="#BF9000")
+    ax.bar([i - w for i in x], [g + p for g, p in zip(dues_g, dues_p)], width=w, label="정기조합비 합계", color="#3b82f6")
+    ax.bar(x, ext_exp_y, width=w, label="외부 순지출", color="#f43f5e")
+    ax.bar([i + w for i in x], grants_y, width=w, label="지부 교부금(내부이전)", color="#f59e0b")
     for i in x:
         ax.text(i - w, dues_g[i] + dues_p[i] + 25, f"{dues_g[i]+dues_p[i]:,.0f}", ha="center", fontsize=8.5)
         ax.text(i, ext_exp_y[i] + 25, f"{ext_exp_y[i]:,.0f}", ha="center", fontsize=8.5)

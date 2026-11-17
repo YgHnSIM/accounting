@@ -143,24 +143,24 @@
     --color-scrollbar-track: var(--scroll-track-light);
     --color-scrollbar-thumb: var(--scroll-thumb-light);
 
-    /* Chart visualization tokens (consumed by dashboard.js) */
-    --chart-cobalt: #516db2;
+    /* Chart visualization tokens (Option 1: Fresh Fintech, consumed by dashboard.js) */
+    --chart-cobalt: #3b82f6;
     --chart-blue: #002fa7;
-    --chart-income: #146c53;
-    --chart-expense: #c24127;
-    --chart-grant: #8c5a00;
-    --chart-slate: #4d5160;
-    --chart-teal: #0f767c;
-    --chart-plum: #5b3d99;
-    --chart-grid: rgba(104, 112, 134, 0.2);
+    --chart-income: #10b981;
+    --chart-expense: #f43f5e;
+    --chart-grant: #f59e0b;
+    --chart-slate: #64748b;
+    --chart-teal: #06b6d4;
+    --chart-plum: #8b5cf6;
+    --chart-grid: rgba(104, 112, 134, 0.18);
     --chart-tick: #4d5160;
     --chart-tooltip-bg: #0b051a;
     --chart-tooltip-ink: #ffffff;
     --color-thead-rule: rgba(255, 255, 255, 0.16);
     --color-backdrop: rgba(11, 5, 26, 0.68);
     --minimap-shade: rgba(11, 5, 26, 0.12);
-    --minimap-lens-bg: rgba(0, 47, 167, 0.14);
-    --minimap-fill: rgba(81, 109, 178, 0.16);
+    --minimap-lens-bg: rgba(59, 130, 246, 0.14);
+    --minimap-fill: rgba(59, 130, 246, 0.16);
 
     /* Typography & Scales */
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, -apple-system, sans-serif;
@@ -215,21 +215,21 @@
     --color-scrollbar-track: var(--scroll-track-dark);
     --color-scrollbar-thumb: var(--scroll-thumb-dark);
 
-    --chart-cobalt: #7994de;
-    --chart-blue: #7fa2ff;
-    --chart-income: #54d1a9;
-    --chart-expense: #f7907a;
-    --chart-grant: #f0c265;
-    --chart-slate: #9ba5c4;
-    --chart-teal: #55c5cb;
-    --chart-plum: #b79bf2;
+    --chart-cobalt: #60a5fa;
+    --chart-blue: #818cf8;
+    --chart-income: #34d399;
+    --chart-expense: #fb7185;
+    --chart-grant: #fbbf24;
+    --chart-slate: #94a3b8;
+    --chart-teal: #22d3ee;
+    --chart-plum: #a78bfa;
     --chart-grid: rgba(155, 165, 196, 0.16);
     --chart-tick: #9ba5c4;
     --chart-tooltip-bg: #1b243e;
     --chart-tooltip-ink: #f5f7fc;
     --minimap-shade: rgba(0, 0, 0, 0.35);
-    --minimap-lens-bg: rgba(127, 162, 255, 0.16);
-    --minimap-fill: rgba(127, 162, 255, 0.15);
+    --minimap-lens-bg: rgba(96, 165, 250, 0.16);
+    --minimap-fill: rgba(96, 165, 250, 0.15);
   }
 
   @supports (color: light-dark(white, black)) {
@@ -1756,11 +1756,11 @@
   }
 
   .month-bar-fill.inc {
-    --bar-color: var(--color-income);
+    --bar-color: var(--chart-income);
   }
 
   .month-bar-fill.exp {
-    --bar-color: var(--color-expense);
+    --bar-color: var(--chart-expense);
   }
 
   .month-bar-amt {

@@ -36,12 +36,16 @@
     --accent-ink: light-dark(#ffffff, #07112b);
     --accent-soft: light-dark(#eef2fc, #17254d);
     --accent-soft-ink: light-dark(#00237d, #d2e0ff);
-    --income: light-dark(#146c53, #54d1a9);
-    --income-soft: light-dark(#e5f4ef, #122e26);
-    --expense: light-dark(#c24127, #f7907a);
-    --expense-soft: light-dark(#fcece8, #341d18);
-    --grant: light-dark(#8c5a00, #f0c265);
-    --grant-soft: light-dark(#faf2df, #2f2513);
+    --income: light-dark(#0b7252, #34d399);
+    --income-soft: light-dark(#ecfdf5, #102d24);
+    --expense: light-dark(#be2a43, #fb7185);
+    --expense-soft: light-dark(#fff1f2, #33181d);
+    --grant: light-dark(#a15c00, #fbbf24);
+    --grant-soft: light-dark(#fffbeb, #2f2412);
+    --chart-blue: light-dark(#3b82f6, #60a5fa);
+    --chart-income: light-dark(#10b981, #34d399);
+    --chart-expense: light-dark(#f43f5e, #fb7185);
+    --chart-grant: light-dark(#f59e0b, #fbbf24);
     --code-bg: light-dark(#f0f3fa, #0e1320);
     --header-bg: light-dark(rgba(255, 255, 255, 0.94), rgba(18, 23, 38, 0.94));
     --font-sans: "Pretendard Variable", "Pretendard", "SUIT", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
@@ -224,13 +228,13 @@
   .kpi {
     background-color: var(--well);
     border: 1px solid var(--rule);
-    border-inline-start: 3px solid var(--logo-blue);
+    border-inline-start: 3px solid var(--chart-blue);
     border-radius: 4px;
     padding: 0.65rem 0.85rem;
   }
-  .kpi[data-tone="income"] { border-inline-start-color: var(--income); }
-  .kpi[data-tone="expense"] { border-inline-start-color: var(--expense); }
-  .kpi[data-tone="grant"] { border-inline-start-color: var(--grant); }
+  .kpi[data-tone="income"] { border-inline-start-color: var(--chart-income); }
+  .kpi[data-tone="expense"] { border-inline-start-color: var(--chart-expense); }
+  .kpi[data-tone="grant"] { border-inline-start-color: var(--chart-grant); }
 
   .kpi-label { font-size: 0.75rem; font-weight: 600; color: var(--muted); }
   .kpi-val {

@@ -33,7 +33,7 @@ plt.rcParams["axes.labelcolor"] = "#1d2130"
 plt.rcParams["xtick.color"] = "#4d5160"
 plt.rcParams["ytick.color"] = "#4d5160"
 plt.rcParams["text.color"] = "#0b051a"
-PALETTE = ["#516db2", "#002fa7", "#146c53", "#c24127", "#8c5a00", "#0f767c", "#5b3d99", "#4d5160"]
+PALETTE = ["#3b82f6", "#002fa7", "#10b981", "#f43f5e", "#f59e0b", "#06b6d4", "#8b5cf6", "#64748b"]
 
 
 def year_tone(year: int) -> str:
@@ -480,8 +480,8 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax1 = plt.subplots(figsize=(10, 4.4), dpi=180)
     x = list(range(len(months)))
     w = 0.36
-    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#146c53")
-    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#c24127")
+    ax1.bar([i - w / 2 for i in x], m_inc, width=w, label="조합 수입", color="#10b981")
+    ax1.bar([i + w / 2 for i in x], m_exp, width=w, label="사업 지출", color="#f43f5e")
     ax1.set_ylabel("월간 수지 (만원)")
     ax1.set_ylim(0, max(m_inc + m_exp + [10]) * 1.15)
     ax1.set_xticks(x)
@@ -489,7 +489,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     ax1.grid(axis="y", linestyle="--", color="#d1d5e0", alpha=0.8)
     ax1.spines["top"].set_visible(False)
     ax2 = ax1.twinx()
-    ax2.plot(x, m_end, color="#516db2", marker="o", linewidth=2.2, label="기말 통장잔액")
+    ax2.plot(x, m_end, color="#3b82f6", marker="o", linewidth=2.2, label="기말 통장잔액")
     ax2.set_ylabel("기말 잔액 (만원)")
     ax2.set_ylim(0, max(m_end + [10]) * 1.18)
     ax2.spines["top"].set_visible(False)
@@ -539,7 +539,7 @@ def generate_public_charts(records, target_year: int, out_dir: Path):
     fig, ax = plt.subplots(figsize=(6.8, 4.4), dpi=180)
     labels = [k for k, _ in reversed(top_m)]
     vals = [v / 10000.0 for _, v in reversed(top_m)]
-    bars = ax.barh(labels, vals, color="#516db2")
+    bars = ax.barh(labels, vals, color="#3b82f6")
     for bar, v in zip(bars, vals):
         ax.text(v + max(vals) * 0.02, bar.get_y() + bar.get_height() / 2, f"{v:,.1f}만원", va="center", fontsize=8.5)
     ax.set_xlim(0, max(vals) * 1.25 if vals else 10)
