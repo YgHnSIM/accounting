@@ -373,8 +373,55 @@
     }
   }
 
+  function allocateWaffleCells(items) {
+    if (!items.length) return [];
+    const total = items.reduce((a, b) => a + b[1], 0) || 1;
+    const baseEach = items.length <= 100 ? 1 : 0;
+    const remaining = Math.max(0, 100 - baseEach * items.length);
+    const alloc = items.map(([, val], idx) => {
+      const exact = (val / total) * remaining;
+      const floor = Math.floor(exact);
+      return { idx, cells: baseEach + floor, rem: exact - floor };
+    });
+    let used = alloc.reduce((s, a) => s + a.cells, 0);
+    const byRem = [...alloc].sort((a, b) => b.rem - a.rem);
+    let cursor = 0;
+    while (used < 100 && byRem.length) {
+      byRem[cursor % byRem.length].cells += 1;
+      used += 1;
+      cursor += 1;
+    }
+    return alloc.map((a) => a.cells);
+  }
+
+  function bindSyncedHighlight(container, selector, onFocusIdx, onReset) {
+    const clear = () => {
+      container.classList.remove("has-hover");
+      container.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"));
+      onReset();
+    };
+    const activate = (idx) => {
+      container.classList.add("has-hover");
+      container.querySelectorAll(selector).forEach((el) => {
+        el.classList.toggle("is-active", Number(el.dataset.idx) === idx);
+      });
+      onFocusIdx(idx);
+    };
+    container.addEventListener("mouseover", (e) => {
+      const target = e.target.closest(selector);
+      if (target) activate(Number(target.dataset.idx));
+    });
+    container.addEventListener("focusin", (e) => {
+      const target = e.target.closest(selector);
+      if (target) activate(Number(target.dataset.idx));
+    });
+    container.addEventListener("mouseleave", clear);
+    container.addEventListener("focusout", (e) => {
+      if (!e.relatedTarget || !container.contains(e.relatedTarget)) clear();
+    });
+  }
+
   function renderDrillChart(filtered, t) {
-    destroyChart("drill");
     updateDrillBreadcrumbs();
     const expRows = filtered.filter((r) => r.gubun === "지출");
     let field = "gwan";
@@ -391,14 +438,14 @@
     for (const r of scoped) {
       agg.set(r[field], (agg.get(r[field]) || 0) + r.exp);
     }
-    const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
+    const items = [...agg.entries()].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
     const totalVal = items.reduce((a, b) => a + b[1], 0) || 1;
     const hint = document.getElementById("drill-hint");
     hint.textContent = field === "gwan"
-      ? "1단계 대분류 · 막대 선택 시 중분류 이동"
+      ? "1단계 대분류 · 항목 선택 시 중분류 이동"
       : field === "hang"
-        ? "2단계 중분류 · 막대 선택 시 세부활동 이동"
-        : "3단계 세부활동 · 막대 선택 시 거래내역 이동";
+        ? "2단계 중분류 · 항목 선택 시 세부활동 이동"
+        : "3단계 세부활동 · 항목 선택 시 거래내역 이동";
 
     const showDrillDefault = () => {
       if (!items.length) return renderReadout("readout-drill", "", []);
@@ -409,52 +456,94 @@
     };
     showDrillDefault();
 
-    const ctx = document.getElementById("chart-drill");
-    charts.drill = new Chart(ctx, {
-      type: "bar",
-      data: {
-        labels: items.map((x) => x[0]),
-        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: items.map((_, i) => t.palette[i % t.palette.length]), borderRadius: 2 }],
-      },
-      options: {
-        indexAxis: "y",
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: "index", axis: "y", intersect: false },
-        onClick: (_, elements) => {
-          if (!elements.length) return;
-          const label = items[elements[0].index][0];
-          if (field === "gwan") {
-            drillState = { gwan: label, hang: null };
-            renderDrillChart(filtered, readChartTheme());
-          } else if (field === "hang") {
-            drillState = { gwan: drillState.gwan, hang: label };
-            renderDrillChart(filtered, readChartTheme());
-          } else if (field === "mok") {
-            window.location.href = buildLedgerHref({
-              year: getFilters().year,
-              gubun: "지출",
-              gwan: drillState.gwan || "전체",
-              q: label,
-            });
-          }
-        },
-        scales: {
-          x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" } },
-          y: { ...baseScaleOpts(t), grid: { display: false } },
-        },
-        plugins: {
-          ...basePluginOpts(t),
-          legend: { display: false },
-          tooltip: makeExternalTooltip("readout-drill", showDrillDefault, (tip) => {
-            const idx = tip.dataPoints[0].dataIndex;
-            const [lbl, val] = items[idx];
-            renderReadout("readout-drill", lbl, [
-              { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
-            ]);
-          }),
-        },
-      },
+    const oldWrap = document.getElementById("waffle-drill");
+    const wrap = oldWrap.cloneNode(false);
+    oldWrap.replaceWith(wrap);
+
+    if (!items.length) {
+      wrap.innerHTML = `<p class="chart-empty">표시할 지출 내역이 없습니다.</p>`;
+      return;
+    }
+
+    const curYear = getFilters().year;
+    const gridItems = items.slice(0, 100);
+    const cellCounts = allocateWaffleCells(gridItems);
+    const cellsHtml = [];
+    gridItems.forEach(([lbl, val], idx) => {
+      const color = t.palette[idx % t.palette.length];
+      const pct = (val / totalVal * 100).toFixed(1);
+      const title = `${lbl}: ${fmt(val)}원 (${pct}%)`;
+      for (let c = 0; c < cellCounts[idx]; c += 1) {
+        cellsHtml.push(
+          `<div class="waffle-cell" data-idx="${idx}" style="--cell-color:${color}" title="${escapeHtml(title)}" aria-hidden="true"></div>`
+        );
+      }
+    });
+
+    const legendHtml = items.map(([lbl, val], idx) => {
+      const color = t.palette[idx % t.palette.length];
+      const pct = (val / totalVal * 100).toFixed(1);
+      if (field === "mok") {
+        const href = buildLedgerHref({
+          year: curYear,
+          gubun: "지출",
+          gwan: drillState.gwan || "전체",
+          q: lbl,
+        });
+        return `<a class="waffle-legend-btn" href="${escapeHtml(href)}" data-idx="${idx}" style="--cell-color:${color}">
+          <span class="waffle-swatch" aria-hidden="true"></span>
+          <span class="waffle-lbl">${escapeHtml(lbl)}</span>
+          <span class="waffle-meta"><strong>${pct}%</strong> <span class="waffle-amt">${fmt(val)}원</span></span>
+          <span class="waffle-arrow" aria-hidden="true">→</span>
+        </a>`;
+      }
+      return `<button type="button" class="waffle-legend-btn" data-idx="${idx}" style="--cell-color:${color}">
+        <span class="waffle-swatch" aria-hidden="true"></span>
+        <span class="waffle-lbl">${escapeHtml(lbl)}</span>
+        <span class="waffle-meta"><strong>${pct}%</strong> <span class="waffle-amt">${fmt(val)}원</span></span>
+        <span class="waffle-arrow" aria-hidden="true">›</span>
+      </button>`;
+    }).join("");
+
+    wrap.innerHTML = `
+      <div class="waffle-stage">
+        <div class="waffle-grid" role="img" aria-label="${field === "gwan" ? "대분류" : field === "hang" ? "중분류" : "세부활동"} 지출 비중 100칸 와플 그리드">${cellsHtml.join("")}</div>
+        <div class="waffle-caption">1칸 ≈ 1% · 총 100칸</div>
+      </div>
+      <div class="waffle-legend">${legendHtml}</div>
+    `;
+
+    bindSyncedHighlight(wrap, "[data-idx]", (idx) => {
+      const item = items[idx];
+      if (!item) return;
+      const [lbl, val] = item;
+      renderReadout("readout-drill", lbl, [
+        { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
+      ]);
+    }, showDrillDefault);
+
+    wrap.addEventListener("click", (e) => {
+      const btnOrCell = e.target.closest("[data-idx]");
+      if (!btnOrCell) return;
+      if (btnOrCell.tagName === "A") return; // native navigation handles mok links
+      const idx = Number(btnOrCell.dataset.idx);
+      const item = items[idx];
+      if (!item) return;
+      const label = item[0];
+      if (field === "gwan") {
+        drillState = { gwan: label, hang: null };
+        renderDrillChart(filtered, readChartTheme());
+      } else if (field === "hang") {
+        drillState = { gwan: drillState.gwan, hang: label };
+        renderDrillChart(filtered, readChartTheme());
+      } else if (field === "mok") {
+        window.location.href = buildLedgerHref({
+          year: curYear,
+          gubun: "지출",
+          gwan: drillState.gwan || "전체",
+          q: label,
+        });
+      }
     });
   }
 
@@ -504,12 +593,11 @@
   }
 
   function renderExpTypeChart(filtered, t) {
-    destroyChart("expType");
     const agg = new Map();
     for (const r of filtered) {
       if (r.gubun === "지출" && r.exp_type) agg.set(r.exp_type, (agg.get(r.exp_type) || 0) + r.exp);
     }
-    const items = [...agg.entries()].sort((a, b) => b[1] - a[1]);
+    const items = [...agg.entries()].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
     const totalVal = items.reduce((a, b) => a + b[1], 0) || 1;
     const showExpDefault = () => {
       if (!items.length) return renderReadout("readout-exp-type", "", []);
@@ -519,32 +607,55 @@
     };
     showExpDefault();
 
-    charts.expType = new Chart(document.getElementById("chart-exp-type"), {
-      type: "doughnut",
-      data: {
-        labels: items.map((x) => x[0]),
-        datasets: [{
-          data: items.map((x) => x[1]),
-          backgroundColor: items.map((_, i) => t.palette[i % t.palette.length]),
-          borderColor: t.sheet,
-          borderWidth: 2,
-        }],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { position: "right", labels: { color: t.tick, boxWidth: 12, font: { family: t.font, size: 11 } } },
-          tooltip: makeExternalTooltip("readout-exp-type", showExpDefault, (tip) => {
-            const idx = tip.dataPoints[0].dataIndex;
-            const [lbl, val] = items[idx];
-            renderReadout("readout-exp-type", lbl, [
-              { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
-            ]);
-          }),
-        },
-      },
-    });
+    const oldWrap = document.getElementById("exp-type-viz");
+    const wrap = oldWrap.cloneNode(false);
+    oldWrap.replaceWith(wrap);
+
+    if (!items.length) {
+      wrap.innerHTML = `<p class="chart-empty">표시할 지출 내역이 없습니다.</p>`;
+      return;
+    }
+
+    const curYear = getFilters().year;
+    const stackSegs = items.map(([lbl, val], idx) => {
+      const color = t.palette[idx % t.palette.length];
+      const pct = (val / totalVal * 100).toFixed(1);
+      const href = buildLedgerHref({ year: curYear, gubun: "지출", q: lbl });
+      return `<a class="exp-stack-seg" href="${escapeHtml(href)}" data-idx="${idx}" style="flex-grow:${val};--seg-color:${color}" aria-label="${escapeHtml(lbl)} ${pct}% (${fmt(val)}원) 거래 내역 보기" title="${escapeHtml(lbl)}: ${fmt(val)}원 (${pct}%)"></a>`;
+    }).join("");
+
+    const rankRows = items.map(([lbl, val], idx) => {
+      const color = t.palette[idx % t.palette.length];
+      const pctNum = (val / totalVal) * 100;
+      const pct = pctNum.toFixed(1);
+      const href = buildLedgerHref({ year: curYear, gubun: "지출", q: lbl });
+      return `<a class="exp-rank-row" href="${escapeHtml(href)}" data-idx="${idx}" style="--item-color:${color}">
+        <div class="exp-rank-top">
+          <span class="exp-rank-swatch" aria-hidden="true"></span>
+          <span class="exp-rank-name">${escapeHtml(lbl)}</span>
+          <span class="exp-rank-nums">
+            <strong>${pct}%</strong>
+            <span class="exp-rank-amt">${fmt(val)}원</span>
+            <span class="exp-rank-arrow" aria-hidden="true">→</span>
+          </span>
+        </div>
+        <span class="exp-rank-track" aria-hidden="true"><span class="exp-rank-fill" style="width:${pctNum.toFixed(2)}%"></span></span>
+      </a>`;
+    }).join("");
+
+    wrap.innerHTML = `
+      <div class="exp-stack-bar" role="group" aria-label="지출방식별 100% 누적 구성 막대">${stackSegs}</div>
+      <div class="exp-rank-list">${rankRows}</div>
+    `;
+
+    bindSyncedHighlight(wrap, "[data-idx]", (idx) => {
+      const item = items[idx];
+      if (!item) return;
+      const [lbl, val] = item;
+      renderReadout("readout-exp-type", lbl, [
+        { label: "지출액", value: `${fmt(val)}원 (${(val / totalVal * 100).toFixed(1)}%)`, color: t.palette[idx % t.palette.length] },
+      ]);
+    }, showExpDefault);
   }
 
   function renderDuesGrantChart(filtered, t) {

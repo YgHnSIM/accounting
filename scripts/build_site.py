@@ -284,14 +284,14 @@ def build_index_page(meta):
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 1번째: 활동별 지출 탐색">
           <div class="chart-head">
             <h3>활동별 지출 탐색</h3>
-            <span id="drill-hint" class="chart-hint" aria-live="polite">1단계 대분류 · 막대 선택 시 하위 탐색</span>
+            <span id="drill-hint" class="chart-hint" aria-live="polite">1단계 대분류 · 항목 선택 시 중분류 이동</span>
           </div>
           <div class="drill-bar-wrap">
             <div id="drill-breadcrumbs" class="breadcrumb-bar"></div>
             <a id="drill-ledger-link" class="drill-ledger-link" href="ledger.html">전체 지출 내역 보기 →</a>
           </div>
           <div id="readout-drill" class="chart-readout" aria-live="polite"></div>
-          <div class="chart-canvas-wrap"><canvas id="chart-drill"></canvas></div>
+          <div id="waffle-drill" class="waffle-wrap"></div>
         </section>
 
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 2번째: 주요 세부활동 지출 TOP 10">
@@ -306,10 +306,10 @@ def build_index_page(meta):
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 3번째: 지출방식별 구성비">
           <div class="chart-head">
             <h3>지출방식별 구성비</h3>
-            <span class="chart-hint">식대·선물·인쇄 등 지출 수단</span>
+            <span class="chart-hint">항목 선택 시 해당 지출 내역 이동</span>
           </div>
           <div id="readout-exp-type" class="chart-readout" aria-live="polite"></div>
-          <div class="chart-canvas-wrap"><canvas id="chart-exp-type"></canvas></div>
+          <div id="exp-type-viz" class="exp-rank-wrap"></div>
         </section>
 
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 4번째: 정기조합비 vs 지부 교부금 추이">
