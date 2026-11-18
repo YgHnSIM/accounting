@@ -1425,16 +1425,26 @@
     z-index: 1;
   }
 
-  .waffle-legend-btn.is-active,
-  .waffle-legend-btn:hover {
+  .waffle-legend-btn.is-active {
     background-color: var(--color-well);
     border-color: var(--cell-color);
   }
 
-  .waffle-legend-btn.is-active .waffle-arrow,
-  .waffle-legend-btn:hover .waffle-arrow {
+  .waffle-legend-btn.is-active .waffle-arrow {
     color: var(--color-accent);
     transform: translateX(2px);
+  }
+
+  @media (hover: hover) {
+    .waffle-legend-btn:hover {
+      background-color: var(--color-well);
+      border-color: var(--cell-color);
+    }
+
+    .waffle-legend-btn:hover .waffle-arrow {
+      color: var(--color-accent);
+      transform: translateX(2px);
+    }
   }
 
   .waffle-legend-btn:focus-visible {
@@ -1591,16 +1601,26 @@
     filter: brightness(1.08);
   }
 
-  .exp-rank-row.is-active,
-  .exp-rank-row:hover {
+  .exp-rank-row.is-active {
     background-color: var(--color-well);
     border-color: var(--item-color);
   }
 
-  .exp-rank-row.is-active .exp-rank-arrow,
-  .exp-rank-row:hover .exp-rank-arrow {
+  .exp-rank-row.is-active .exp-rank-arrow {
     color: var(--color-accent);
     transform: translateX(2px);
+  }
+
+  @media (hover: hover) {
+    .exp-rank-row:hover {
+      background-color: var(--color-well);
+      border-color: var(--item-color);
+    }
+
+    .exp-rank-row:hover .exp-rank-arrow {
+      color: var(--color-accent);
+      transform: translateX(2px);
+    }
   }
 
   .exp-stack-seg:focus-visible,

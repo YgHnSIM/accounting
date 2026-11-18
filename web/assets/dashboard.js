@@ -395,6 +395,7 @@
   }
 
   function bindSyncedHighlight(container, selector, onFocusIdx, onReset) {
+    container.classList.remove("has-hover");
     const clear = () => {
       container.classList.remove("has-hover");
       container.querySelectorAll(".is-active").forEach((el) => el.classList.remove("is-active"));
@@ -407,19 +408,28 @@
       });
       onFocusIdx(idx);
     };
-    container.addEventListener("mouseover", (e) => {
+    container.addEventListener("pointerover", (e) => {
+      if (e.pointerType !== "mouse") return;
       const target = e.target.closest(selector);
       if (target) activate(Number(target.dataset.idx));
+      else clear();
     });
     container.addEventListener("focusin", (e) => {
       const target = e.target.closest(selector);
-      if (target) activate(Number(target.dataset.idx));
+      if (target && target.matches(":focus-visible")) activate(Number(target.dataset.idx));
     });
+    container.addEventListener("pointerleave", clear);
     container.addEventListener("mouseleave", clear);
+    container.addEventListener("pointercancel", clear);
     container.addEventListener("focusout", (e) => {
       if (!e.relatedTarget || !container.contains(e.relatedTarget)) clear();
     });
   }
+
+  window.addEventListener("pageshow", () => {
+    document.querySelectorAll(".has-hover").forEach((el) => el.classList.remove("has-hover"));
+    document.querySelectorAll(".is-active[data-idx]").forEach((el) => el.classList.remove("is-active"));
+  });
 
   function renderDrillChart(filtered, t) {
     updateDrillBreadcrumbs();
@@ -458,6 +468,7 @@
 
     const oldWrap = document.getElementById("waffle-drill");
     const wrap = oldWrap.cloneNode(false);
+    wrap.classList.remove("has-hover");
     oldWrap.replaceWith(wrap);
 
     if (!items.length) {
@@ -609,6 +620,7 @@
 
     const oldWrap = document.getElementById("exp-type-viz");
     const wrap = oldWrap.cloneNode(false);
+    wrap.classList.remove("has-hover");
     oldWrap.replaceWith(wrap);
 
     if (!items.length) {
