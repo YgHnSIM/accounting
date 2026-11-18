@@ -82,7 +82,7 @@
         <td class="ctr" data-label="거래번호">${escapeHtml(r.tx_id)}</td>
         <td class="ctr" data-label="단위">${escapeHtml(r.unit)}</td>
         <td class="ctr" data-label="구분">${escapeHtml(labelGubun(r.gubun))}</td>
-        <td data-label="분류(대·중·세부)">${escapeHtml(r.gwan)} &gt; ${escapeHtml(r.hang)} &gt; <b>${escapeHtml(r.mok)}</b></td>
+        <td class="coa-cell" data-label="분류(대·중·세부)"><span class="coa-path"><span class="coa-gwan">${escapeHtml(r.gwan)} <span class="coa-sep">&gt;</span></span> <span class="coa-hang">${escapeHtml(r.hang)} <span class="coa-sep">&gt;</span></span> <b class="coa-mok">${escapeHtml(r.mok)}</b></span></td>
         <td class="${etCls}" data-label="지출방식">${escapeHtml(r.exp_type)}</td>
         <td class="ctr" data-label="대상·귀속">${escapeHtml(r.target)}${r.attr_ym ? " (" + escapeHtml(r.attr_ym) + ")" : ""}</td>
         <td class="${inCls}" data-label="수입금액">${r.inc ? "+" + fmt(r.inc) : ""}</td>

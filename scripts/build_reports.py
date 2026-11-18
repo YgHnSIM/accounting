@@ -194,6 +194,11 @@ BASE_CSS = """
   tbody th { position: sticky; inset-inline-start: 0; z-index: 1; background: #fff; font-weight: 600; text-align: center; }
   td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
   td.ctr { text-align: center; }
+  .coa-path { display: inline-flex; flex-direction: column; align-items: flex-start; gap: 2px; line-height: 1.32; }
+  .coa-gwan, .coa-hang { font-size: 0.73rem; color: #64748b; white-space: nowrap; }
+  .coa-mok { font-size: 0.78rem; font-weight: 700; color: #0f172a; white-space: nowrap; }
+  tr.muted .coa-mok { color: #64748b; }
+  .coa-sep { color: #64748b; font-weight: 400; margin-inline-start: 2px; }
   tr.subtot td, tr.subtot th { background: #eff6ff; font-weight: 700; }
   tr.tot td, tr.tot th { background: #e2e8f0; font-weight: 700; }
   tr.muted td, tr.muted th { color: #64748b; background: #fff7ed; }
@@ -231,6 +236,7 @@ BASE_CSS = """
       tr.subtot th, tr.tot th { background: #334155; color: #fff; }
       td { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; text-align: right; white-space: normal; }
       td::before { content: attr(data-label); font-weight: 600; color: #475569; text-align: left; flex-shrink: 0; }
+      td.coa-cell .coa-path { align-items: flex-end; text-align: right; }
       td.empty-cell { display: none; }
     }
   }
@@ -327,7 +333,7 @@ def build_monthly_report(records, target_ym: str, units_cfg):
             f"<tr{cls}><th scope='row'>{html.escape(r['date'])} · {html.escape(r['mok'])}</th>"
             f"<td class='ctr' data-label='회계단위'>{html.escape(r['unit'])}</td>"
             f"<td class='ctr' data-label='구분'>{html.escape(r['gubun'])}</td>"
-            f"<td data-label='계정(관·항·목)'>{html.escape(r['gwan'])} &gt; {html.escape(r['hang'])} &gt; <b>{html.escape(r['mok'])}</b></td>"
+            f"<td class='coa-cell' data-label='계정(관·항·목)'><span class='coa-path'><span class='coa-gwan'>{html.escape(r['gwan'])} <span class='coa-sep'>&gt;</span></span> <span class='coa-hang'>{html.escape(r['hang'])} <span class='coa-sep'>&gt;</span></span> <b class='coa-mok'>{html.escape(r['mok'])}</b></span></td>"
             f"<td class='{et_cls}' data-label='지출형태'>{html.escape(r['exp_type'])}</td>"
             f"<td class='ctr' data-label='대상·귀속'>{html.escape(attr_txt)}</td>"
             f"<td class='{iv_cls}' data-label='수입'>{fmt_won(r['inc']) if r['inc'] else ''}</td>"

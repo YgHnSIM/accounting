@@ -1883,6 +1883,39 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* 3-level COA classification stack (gwan > / hang > / mok) */
+  .coa-path {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.08rem;
+    line-height: 1.32;
+  }
+
+  .coa-gwan,
+  .coa-hang {
+    font-size: 0.76rem;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .coa-mok {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--color-ink);
+    white-space: nowrap;
+  }
+
+  tr.muted .coa-mok {
+    color: var(--color-muted);
+  }
+
+  .coa-sep {
+    color: var(--color-muted);
+    font-weight: 400;
+    margin-inline-start: 0.16rem;
+  }
+
   tr.subtot td, tr.subtot th {
     background-color: var(--color-subtot-bg);
     color: var(--color-ink);
@@ -2384,6 +2417,11 @@
         color: var(--color-muted);
         text-align: start;
         flex-shrink: 0;
+      }
+
+      td.coa-cell .coa-path {
+        align-items: flex-end;
+        text-align: end;
       }
 
       td.empty-cell {

@@ -625,7 +625,7 @@ def build_public_monthly_html(records, target_ym: str):
             f"<tr{cls}><th scope='row'>{html.escape(r['date'])} · {html.escape(r['mok'])}</th>"
             f"<td class='ctr' data-label='단위'>{html.escape(r['unit'])}</td>"
             f"<td class='ctr' data-label='구분'>{html.escape(gubun_disp.get(r['gubun'], r['gubun']))}</td>"
-            f"<td data-label='분류(대·중·세부)'>{html.escape(r['gwan'])} &gt; {html.escape(r['hang'])} &gt; <b>{html.escape(r['mok'])}</b></td>"
+            f"<td class='coa-cell' data-label='분류(대·중·세부)'><span class='coa-path'><span class='coa-gwan'>{html.escape(r['gwan'])} <span class='coa-sep'>&gt;</span></span> <span class='coa-hang'>{html.escape(r['hang'])} <span class='coa-sep'>&gt;</span></span> <b class='coa-mok'>{html.escape(r['mok'])}</b></span></td>"
             f"<td class='{et_cls}' data-label='지출방식'>{html.escape(r['exp_type'])}</td>"
             f"<td class='{iv_cls}' data-label='수입'>{('+' + fmt_won(r['inc'])) if r['inc'] else ''}</td>"
             f"<td class='{ev_cls}' data-label='지출'>{('-' + fmt_won(r['exp'])) if r['exp'] else ''}</td>"
