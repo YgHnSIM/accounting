@@ -297,9 +297,10 @@ def build_index_page(meta):
         <section class="chart-card" role="group" aria-roledescription="slide" aria-label="4개 중 2번째: 주요 세부활동 지출 TOP 10">
           <div class="chart-head">
             <h3>주요 세부활동 지출 TOP 10</h3>
-            <span class="chart-hint">조합 주요 사업별 집행 규모</span>
+            <span class="chart-hint">대분류 색상 연동 · 막대 선택 시 거래내역 이동</span>
           </div>
           <div id="readout-top-mok" class="chart-readout" aria-live="polite"></div>
+          <div id="top-mok-legend" class="top-mok-legend" aria-label="대분류 색상 범례"></div>
           <div class="chart-canvas-wrap"><canvas id="chart-top-mok"></canvas></div>
         </section>
 

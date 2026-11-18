@@ -558,17 +558,44 @@
     });
   }
 
+  function getGwanColorMap(filtered, t) {
+    const agg = new Map();
+    for (const r of filtered) {
+      if (r.gubun === "지출" && r.gwan) agg.set(r.gwan, (agg.get(r.gwan) || 0) + r.exp);
+    }
+    const ranked = [...agg.entries()].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]);
+    return new Map(ranked.map(([gwan], idx) => [gwan, t.palette[idx % t.palette.length]]));
+  }
+
   function renderTopMokChart(filtered, t) {
     destroyChart("topMok");
     const agg = new Map();
+    const mokGwan = new Map();
     for (const r of filtered) {
-      if (r.gubun === "지출") agg.set(r.mok, (agg.get(r.mok) || 0) + r.exp);
+      if (r.gubun === "지출") {
+        agg.set(r.mok, (agg.get(r.mok) || 0) + r.exp);
+        if (!mokGwan.has(r.mok) && r.gwan) mokGwan.set(r.mok, r.gwan);
+      }
     }
-    const items = [...agg.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const items = [...agg.entries()].filter((x) => x[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, 10);
+    const gwanColorMap = getGwanColorMap(filtered, t);
+    const barColors = items.map(([mok]) => gwanColorMap.get(mokGwan.get(mok)) || t.blue);
+
+    const legendEl = document.getElementById("top-mok-legend");
+    if (legendEl) {
+      const usedGwans = new Set(items.map(([mok]) => mokGwan.get(mok)).filter(Boolean));
+      const pills = [...gwanColorMap.entries()]
+        .filter(([g]) => usedGwans.has(g))
+        .map(([g, col]) => `<span class="top-mok-pill"><span class="waffle-swatch" style="--cell-color:${col}" aria-hidden="true"></span>${escapeHtml(g)}</span>`);
+      legendEl.innerHTML = pills.join("");
+    }
+
     const showTopDefault = () => {
       if (!items.length) return renderReadout("readout-top-mok", "", []);
-      renderReadout("readout-top-mok", `${items[0][0]} (1위)`, [
-        { label: "지출액", value: `${fmt(items[0][1])}원`, color: t.blue },
+      const [lbl, val] = items[0];
+      const gwan = mokGwan.get(lbl) || "지출액";
+      renderReadout("readout-top-mok", `1위 · ${lbl}`, [
+        { label: gwan, value: `${fmt(val)}원`, color: barColors[0] },
       ]);
     };
     showTopDefault();
@@ -577,13 +604,27 @@
       type: "bar",
       data: {
         labels: items.map((x) => x[0]),
-        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: t.blue, borderRadius: 2 }],
+        datasets: [{ label: "지출액", data: items.map((x) => x[1]), backgroundColor: barColors, borderRadius: 3 }],
       },
       options: {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", axis: "y", intersect: false },
+        onHover: (e, els) => {
+          if (e?.native?.target) e.native.target.style.cursor = els.length ? "pointer" : "default";
+        },
+        onClick: (_, els) => {
+          if (!els.length) return;
+          const lbl = items[els[0].index]?.[0];
+          if (!lbl) return;
+          window.location.href = buildLedgerHref({
+            year: getFilters().year,
+            gubun: "지출",
+            gwan: mokGwan.get(lbl) || "전체",
+            q: lbl,
+          });
+        },
         scales: {
           x: { ...baseScaleOpts(t), beginAtZero: true, ticks: { ...baseScaleOpts(t).ticks, maxTicksLimit: 5, callback: (v) => fmt(v / 10000) + "만" } },
           y: { ...baseScaleOpts(t), grid: { display: false } },
@@ -594,8 +635,9 @@
           tooltip: makeExternalTooltip("readout-top-mok", showTopDefault, (tip) => {
             const idx = tip.dataPoints[0].dataIndex;
             const [lbl, val] = items[idx];
+            const gwan = mokGwan.get(lbl) || "지출액";
             renderReadout("readout-top-mok", `${idx + 1}위 · ${lbl}`, [
-              { label: "지출액", value: `${fmt(val)}원`, color: t.blue },
+              { label: gwan, value: `${fmt(val)}원`, color: barColors[idx] },
             ]);
           }),
         },

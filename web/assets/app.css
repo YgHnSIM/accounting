@@ -1469,6 +1469,23 @@
     }
   }
 
+  /* ── Card 2: TOP 10 Gwan Color Legend ────────────────────────────────── */
+  .top-mok-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem 0.65rem;
+    margin-block-end: 0.55rem;
+    font-size: 0.74rem;
+    color: var(--color-ink-2);
+  }
+
+  .top-mok-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.32rem;
+    white-space: nowrap;
+  }
+
   /* ── Card 3: 100% Stacked Bar + Clickable Ranked Ledger Rows ─────────── */
   .exp-rank-wrap {
     display: flex;
