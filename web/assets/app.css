@@ -2294,8 +2294,7 @@
         border-block-end: none;
       }
 
-      tbody tr:nth-child(even) td,
-      tbody tr:nth-child(even) th {
+      tbody tr:nth-child(even) td {
         background-color: var(--color-sheet);
       }
 
@@ -2307,6 +2306,13 @@
         color: var(--color-thead-ink);
         text-align: start;
         font-size: 0.85rem;
+      }
+
+      tbody th .row-link,
+      tbody th .row-link:hover,
+      tbody th .row-link:focus-visible {
+        color: inherit;
+        text-decoration-color: currentColor;
       }
 
       tr.subtot th, tr.tot th {
