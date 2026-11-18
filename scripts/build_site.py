@@ -398,6 +398,76 @@ def build_ledger_page():
     return render_shell("거래 탐색기", "ledger", "", body, scripts, "노동조합 공개 원장 거래 탐색기")
 
 
+COA_MAP_GROUPS = [
+    ("income", "수입", ("수입",)),
+    ("expense", "지출", ("지출",)),
+    ("transfer", "교부·이월", ("내부이전", "기초이월", "이월차액")),
+]
+
+
+def build_coa_map_data(coa_cfg, units_cfg):
+    """Tree for the coa.html diagram: 구분 group -> 대분류 -> 중분류 -> 세부활동 (order kept from coa.json)."""
+    groups = []
+    for key, label, cats in COA_MAP_GROUPS:
+        gwans = []
+        index = {}
+        for a in coa_cfg["accounts"]:
+            if a["category"] not in cats:
+                continue
+            gid = (a["category"], a["gwan"])
+            if gid not in index:
+                index[gid] = {"name": a["gwan"], "category": a["category"], "hangs": []}
+                gwans.append(index[gid])
+            g = index[gid]
+            hang = next((h for h in g["hangs"] if h["name"] == a["hang"]), None)
+            if hang is None:
+                hang = {"name": a["hang"], "moks": []}
+                g["hangs"].append(hang)
+            hang["moks"].append({"name": a["mok"], "desc": a["description"]})
+        if gwans:
+            groups.append({"key": key, "label": label, "gwans": gwans})
+    units = [
+        {"code": u["code"], "name": u["name"], "fullName": u["fullName"],
+         "active": u["status"] == "active", "note": u["note"],
+         "period": f"{u['openedOn']} ~ {u['closedOn'] or '현재'}"}
+        for u in units_cfg["units"]
+    ]
+    return {"groups": groups, "units": units}
+
+
+def render_coa_map_fallback(data):
+    """Static nested lists: the full tree, readable without JS (and in print)."""
+    e = html.escape
+    hq = [u for u in data["units"] if u["code"] == "HQ"]
+    branches = [u for u in data["units"] if u["code"] != "HQ"]
+    unit_li = "".join(
+        f"<li>{e(u['name'])} <span class='coa-tree-note'>{e(u['fullName'])}{'' if u['active'] else ' · 폐지'}</span></li>"
+        for u in branches
+    )
+    units_html = (
+        f"<li><strong>회계단위</strong><ul>"
+        + "".join(f"<li>{e(u['name'])} <span class='coa-tree-note'>{e(u['note'])}</span><ul>{unit_li}</ul></li>" for u in hq)
+        + "</ul></li>"
+    )
+    group_html = []
+    for g in data["groups"]:
+        gw = []
+        for gwan in g["gwans"]:
+            hs = "".join(
+                f"<li>{e(h['name'])}<ul>"
+                + "".join(f"<li><b>{e(m['name'])}</b> <span class='coa-tree-note'>{e(m['desc'])}</span></li>" for m in h["moks"])
+                + "</ul></li>"
+                for h in gwan["hangs"]
+            )
+            gw.append(f"<li><strong>{e(gwan['name'])}</strong><ul>{hs}</ul></li>")
+        group_html.append(f"<li><strong>{e(g['label'])}</strong><ul>{''.join(gw)}</ul></li>")
+    return (
+        "<ul class='coa-tree'>"
+        f"<li><strong>물류노동조합 회계</strong><ul>{units_html}"
+        f"<li><strong>수입·지출 분류</strong><ul>{''.join(group_html)}</ul></li></ul></li></ul>"
+    )
+
+
 def build_coa_page(coa_cfg, units_cfg):
     unit_rows = []
     for u in units_cfg["units"]:
@@ -422,6 +492,10 @@ def build_coa_page(coa_cfg, units_cfg):
             f"<td data-label='설명'>{html.escape(a['description'])}</td></tr>"
         )
 
+    map_data = build_coa_map_data(coa_cfg, units_cfg)
+    map_fallback = render_coa_map_fallback(map_data)
+    map_json = json.dumps(map_data, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+
     body = f"""
   <header class="page-masthead">
     <div>
@@ -432,6 +506,17 @@ def build_coa_page(coa_cfg, units_cfg):
       <span class="data-stamp">{len(coa_cfg['accounts'])}개 세부활동 · {len(units_cfg['units'])}개 단위</span>
     </div>
   </header>
+
+  <section class="section-band" aria-labelledby="sec-coa-map">
+    <div class="section-head">
+      <h2 id="sec-coa-map">한눈에 보는 회계 구조</h2>
+      <span class="section-sub">대분류를 누르면 중분류, 중분류를 누르면 세부활동이 펼쳐집니다</span>
+    </div>
+    <div class="coa-map" id="coa-map">
+      <div class="coa-map-fallback" id="coa-map-fallback">{map_fallback}</div>
+    </div>
+    <script type="application/json" id="coa-map-data">{map_json}</script>
+  </section>
 
   <section class="section-band" aria-labelledby="sec-units">
     <div class="section-head">
@@ -460,7 +545,7 @@ def build_coa_page(coa_cfg, units_cfg):
       </table>
     </div>
   </section>"""
-    return render_shell("회계기준·단위", "coa", "", body, "", "노동조합 수입·지출 분류 기준 및 회계단위 안내")
+    return render_shell("회계기준·단위", "coa", "", body, '<script src="assets/coa-map.js"></script>', "노동조합 수입·지출 분류 기준 및 회계단위 안내")
 
 
 def generate_public_charts(records, target_year: int, out_dir: Path):
