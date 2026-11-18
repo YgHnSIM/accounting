@@ -161,8 +161,9 @@
     if (e.key === "Escape" && path.length) { e.preventDefault(); back(); }
   });
   window.addEventListener("popstate", (e) => {
-    const p = e.state && Array.isArray(e.state.coaMap) ? e.state.coaMap : [];
-    render(p);
+    // Tab switches (coa-tabs.js) push their own entries; only react to diagram states.
+    if (!e.state || !Array.isArray(e.state.coaMap)) return;
+    render(e.state.coaMap, { focus: !document.getElementById("panel-diagram")?.hidden });
   });
 
   const fallback = document.getElementById("coa-map-fallback");

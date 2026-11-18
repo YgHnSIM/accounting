@@ -507,6 +507,9 @@ def build_coa_page(coa_cfg, units_cfg):
     </div>
   </header>
 
+  <div class="coa-tabs-mount" id="coa-tabs-mount"></div>
+
+  <div class="coa-panel" id="panel-diagram" data-tab="diagram" data-tab-label="다이어그램">
   <section class="section-band" aria-labelledby="sec-coa-map">
     <div class="section-head">
       <h2 id="sec-coa-map">한눈에 보는 회계 구조</h2>
@@ -517,7 +520,9 @@ def build_coa_page(coa_cfg, units_cfg):
     </div>
     <script type="application/json" id="coa-map-data">{map_json}</script>
   </section>
+  </div>
 
+  <div class="coa-panel" id="panel-table" data-tab="table" data-tab-label="표">
   <section class="section-band" aria-labelledby="sec-units">
     <div class="section-head">
       <h2 id="sec-units">1. 회계단위 안내 (본부 · 지부)</h2>
@@ -544,8 +549,9 @@ def build_coa_page(coa_cfg, units_cfg):
         <tbody>{''.join(coa_rows)}</tbody>
       </table>
     </div>
-  </section>"""
-    return render_shell("회계기준·단위", "coa", "", body, '<script src="assets/coa-map.js"></script>', "노동조합 수입·지출 분류 기준 및 회계단위 안내")
+  </section>
+  </div>"""
+    return render_shell("회계기준·단위", "coa", "", body, '<script src="assets/coa-tabs.js"></script>\n<script src="assets/coa-map.js"></script>', "노동조합 수입·지출 분류 기준 및 회계단위 안내")
 
 
 def generate_public_charts(records, target_year: int, out_dir: Path):
