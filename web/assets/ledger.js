@@ -62,7 +62,12 @@
 
     const sumIn = FILTERED.reduce((a, r) => a + r.inc, 0);
     const sumOut = FILTERED.reduce((a, r) => a + r.exp, 0);
-    document.getElementById("ledger-stats").textContent = `검색 결과 ${total}건 · 입금합계 ${fmt(sumIn) || 0}원 · 출금합계 ${fmt(sumOut) || 0}원`;
+    const statsEl = document.getElementById("ledger-stats");
+    const countLine = document.createElement("span");
+    countLine.textContent = `검색 결과 ${total}건`;
+    const sumLine = document.createElement("span");
+    sumLine.textContent = `입금합계 ${fmt(sumIn) || 0}원 · 출금합계 ${fmt(sumOut) || 0}원`;
+    statsEl.replaceChildren(countLine, sumLine);
 
     const slice = FILTERED.slice((curPage - 1) * PAGE_SIZE, curPage * PAGE_SIZE);
     const tbody = document.getElementById("ledger-tbody");

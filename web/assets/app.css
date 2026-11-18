@@ -1785,11 +1785,18 @@
   }
 
   .stats-line {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
     margin-block-end: 0.65rem;
     font-size: 0.84rem;
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     color: var(--color-ink-2);
+  }
+
+  .stats-line > span {
+    white-space: nowrap;
   }
 
   /* Responsive Financial Ledger Tables */
@@ -2310,7 +2317,7 @@
     }
 
     @container table-box (inline-size < 620px) {
-      table, thead, tbody, th, td {
+      table, thead, tbody, tr, th, td {
         display: block;
       }
 
@@ -2318,32 +2325,23 @@
         display: none;
       }
 
-      /* Compact record card: title bar, then a two-column field grid */
       tr {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        grid-auto-flow: row dense;
-        margin-block-end: 0.75rem;
+        margin-block-end: 0.85rem;
         border: var(--rule-hair) solid var(--color-rule);
         border-radius: var(--radius-sheet);
         overflow: clip;
         background-color: var(--color-sheet);
       }
 
-      tr {
-        padding-block-end: 0.4rem;
-      }
-
       th, td {
         border-inline-end: none;
-        border-block-end: none;
-        padding-block: 0.4rem 0.1rem;
+        border-block-end: var(--rule-hair) solid var(--color-rule);
+        padding-block: 0.48rem;
         padding-inline: 0.75rem;
       }
 
-      tbody th {
-        padding-block: 0.5rem;
-        margin-block-end: 0.15rem;
+      tr > *:last-child {
+        border-block-end: none;
       }
 
       tbody tr:nth-child(even) td {
@@ -2351,13 +2349,11 @@
       }
 
       tbody th {
-        grid-column: 1 / -1;
         position: static;
         background-color: var(--color-thead-bg);
         color: var(--color-thead-ink);
         text-align: start;
-        font-size: 0.86rem;
-        line-height: 1.4;
+        font-size: 0.85rem;
       }
 
       tbody th .row-link,
@@ -2372,37 +2368,22 @@
         color: var(--color-ink);
       }
 
+      /* Label left, value right; the value keeps Korean word breaks */
       td {
         display: flex;
-        flex-direction: column;
-        gap: 0.05rem;
-        min-inline-size: 0;
-        text-align: start;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.75rem;
+        text-align: end;
         white-space: normal;
-        font-size: 0.86rem;
-        line-height: 1.4;
       }
 
       td::before {
         content: attr(data-label);
-        font-size: 0.7rem;
         font-weight: 600;
         color: var(--color-muted);
-        line-height: 1.3;
-      }
-
-      td.num {
         text-align: start;
-        font-weight: 600;
-      }
-
-      /* Long text fields read across the whole card */
-      td[data-label^="분류"],
-      td[data-label^="내용"],
-      td[data-label="설명"],
-      td[data-label="정식명칭"],
-      td[data-label="비고"] {
-        grid-column: 1 / -1;
+        flex-shrink: 0;
       }
 
       td.empty-cell {
