@@ -107,8 +107,18 @@
     return p.length === 2 ? w.name : w.hangs[p[2]].name;
   }
 
+  // Where the reader was when they opened a node: key = that node's data-go.
+  // Restored when they fold back (접기, 이전 단계, breadcrumb, Escape, browser back).
+  const saved = new Map();
+  const nodeFor = (key) => stage.querySelector(`.coa-node[data-go="${key}"]:not(.is-current)`);
+
   function render(next, opts = {}) {
     const prev = path;
+    if (next.length > prev.length) {
+      const key = next.slice(0, prev.length === 0 ? 2 : 3).join(",");
+      const el = nodeFor(key);
+      saved.set(key, { y: window.scrollY, top: el ? el.getBoundingClientRect().top : null });
+    }
     path = next;
     const level = path.length === 0 ? 0 : path.length - 1;
     stage.innerHTML = level === 0 ? renderOverview() : level === 1 ? renderGwan(path[0], path[1]) : renderHang(path[0], path[1], path[2]);
@@ -127,15 +137,28 @@
 
     if (opts.focus === false) return;
     // Going deeper: focus the new heading. Going back: return focus to the node we came from.
-    let target = null;
     if (next.length < prev.length) {
       const key = prev.slice(0, next.length === 0 ? 2 : 3).join(",");
-      target = stage.querySelector(`.coa-node[data-go="${key}"]:not(.is-current)`);
+      const node = nodeFor(key);
+      if (node) node.focus({ preventScroll: true });
+      restoreScroll(node, saved.get(key));
+      return;
     }
-    target = target || stage.querySelector(".coa-stage-title");
-    target.focus({ preventScroll: true });
+    stage.querySelector(".coa-stage-title").focus({ preventScroll: true });
     const top = view.getBoundingClientRect().top;
     if (top < 0 || top > window.innerHeight * 0.6) view.scrollIntoView({ block: "start", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  }
+
+  function restoreScroll(node, pos) {
+    // Measure the settled layout: drop the step-in animation's transform first.
+    stage.getAnimations({ subtree: true }).forEach((a) => a.finish());
+    if (pos) {
+      const y = node && pos.top !== null ? window.scrollY + node.getBoundingClientRect().top - pos.top : pos.y;
+      window.scrollTo({ top: Math.max(0, y), behavior: "instant" });
+    }
+    if (!node) return;
+    const r = node.getBoundingClientRect();
+    if (r.bottom < 0 || r.top > window.innerHeight) node.scrollIntoView({ block: "center", behavior: "instant" });
   }
 
   function parseGo(v) { return v === "" ? [] : v.split(",").map(Number); }
@@ -165,6 +188,9 @@
     if (!e.state || !Array.isArray(e.state.coaMap)) return;
     render(e.state.coaMap, { focus: !document.getElementById("panel-diagram")?.hidden });
   });
+
+  // Diagram steps are same-document history entries; we place the scroll ourselves.
+  if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
   const fallback = document.getElementById("coa-map-fallback");
   root.classList.add("is-enhanced");
